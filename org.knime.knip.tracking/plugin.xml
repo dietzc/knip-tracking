@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse version="3.0"?><plugin>
+
+   <!-- This is an example for providing an own category 
+      <extension
+         point="org.knime.workbench.repository.categories">
+      <category
+            description="Category containing my nodes"
+            icon="icons/default.png"
+            level-id="myNodes"
+            name="My nodes"
+            path="/"/>
+   </extension>
+   -->
+   
+   <extension point="org.knime.workbench.repository.nodes">
+      <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletcreator.TrackletCreatorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcreator.TrackletCreatorNodeFactory"/>
+   <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory" id="org.knime.knip.trackingrevised.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.adddistanceedges.AddDistanceEdgesNodeFactory" id="org.knime.knip.trackingrevised.nodes.adddistanceedges.AddDistanceEdgesNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletcombiner.TrackletCombinerNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcombiner.TrackletCombinerNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.heldreader.HeldReaderNodeFactory" id="org.knime.knip.trackingrevised.nodes.heldreader.HeldReaderNodeFactory">
+</node>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
+</extension>
+   <extension point="org.knime.network.core.FeatureType">
+      <FeatureType FeatureType="org.knime.knip.trackingrevised.data.FeatureTypeImgPlusCell">
+      </FeatureType>
+   </extension>
+   <extension point="org.knime.network.base.JungGraphLayout">
+      <JungGraphLayout JungGraphLayout="org.knime.knip.trackingrevised.layout.MyTrackingLayout">
+      </JungGraphLayout>
+   </extension>
+   <extension point="org.knime.workbench.repository.categories">
+      <category description="Tracking nodes" level-id="trackingrevised" name="Tracking Revised" path="/community/knip">
+      </category>
+   </extension>
+   
+</plugin>

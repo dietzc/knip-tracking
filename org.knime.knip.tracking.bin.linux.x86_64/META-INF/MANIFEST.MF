@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: LPSolve libraries
+Bundle-SymbolicName: org.knime.knip.tracking.bin.linux.x86_64;singleton:=true
+Bundle-Version: 0.7.1.qualifier
+Bundle-Vendor: University of Konstanz
+Fragment-Host: org.knime.knip.trackingrevised;bundle-version="0.7.1"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Eclipse-PlatformFilter: (&(osgi.os=linux)(osgi.arch=x86_64))
+Bundle-NativeCode: 
+ lib/linux/x86_64/liblpsolve55.so;
+ lib/linux/x86_64/liblpsolve55j.so;
+ osname=linux;
+ processor=x86_64

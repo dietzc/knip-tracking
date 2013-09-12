@@ -1,0 +1,20 @@
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode icon="icons/threshold.png" type="Manipulator">
+	<name>Held Reader</name>
+	<shortDescription>
+		tbd
+	</shortDescription>
+
+	<fullDescription>
+		<intro>tbd</intro>
+	</fullDescription>
+
+	<ports>
+		<inPort index="0" name="FeaturesAsTable">
+			Test
+		</inPort>
+		<outPort name="TransactionsPerFeature" index="0">Transaction per
+			Features
+		</outPort>
+	</ports>
+</knimeNode>

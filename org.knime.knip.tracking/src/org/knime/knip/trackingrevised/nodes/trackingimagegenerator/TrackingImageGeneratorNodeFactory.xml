@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode icon="./default.png" type="Source">
+    <name>TrackletImageGenerator</name>
+    
+    <shortDescription>
+        Creates a 2D tracking image out of a defined 'scripting language'
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>Creates a 2D tracking image out of a defined 'scripting language':
+        <p>A point is given by (x,y,z)</p>
+        <p>A line is either defined by (x,y,time)-(x,y,time), which means from start point to end point,</p>
+        <p>or by (x,y,time)+(deltaX,deltaY,deltaTime), which means from start point in the given direction</p>
+        
+        </intro>
+        
+        
+        <option name="Script">The 'script'</option>
+    </fullDescription>
+    
+    <ports>
+        <outPort index="0" name="Tracking image">The created tracking image</outPort>
+    </ports>    
+    <views>
+        <view index="0" name="Image view">A view for the image view</view>
+    </views>
+</knimeNode>
