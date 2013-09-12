@@ -1,4 +1,5 @@
-KNIME Image Processing - Tracking Extension
+KNIME Image Processing 
+Tracking Extension
 =============
 
 Under development...
