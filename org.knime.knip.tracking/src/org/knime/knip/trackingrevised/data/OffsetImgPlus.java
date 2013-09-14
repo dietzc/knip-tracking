@@ -3,7 +3,7 @@ package org.knime.knip.trackingrevised.data;
 import net.imglib2.img.Img;
 import net.imglib2.meta.AxisType;
 import net.imglib2.meta.ImgPlus;
-import net.imglib2.meta.ImgPlusMetadata;
+import net.imglib2.meta.Metadata;
 import net.imglib2.type.numeric.RealType;
 
 @Deprecated
@@ -11,7 +11,7 @@ public class OffsetImgPlus<T extends RealType<T>> extends ImgPlus<T> {
 
 	private long[] offset;
 
-	public OffsetImgPlus(Img<T> img, ImgPlusMetadata metadata) {
+	public OffsetImgPlus(Img<T> img, Metadata metadata) {
 		super(img, metadata);
 	}
 

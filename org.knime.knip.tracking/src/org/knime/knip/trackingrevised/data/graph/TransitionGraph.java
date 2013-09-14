@@ -20,11 +20,14 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.UnsignedIntType;
 
+import org.knime.core.node.CanceledExecutionException;
+import org.knime.core.node.ExecutionMonitor;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.trackingrevised.util.OffsetHandling;
 import org.knime.knip.trackingrevised.util.PartitionComparatorString;
 import org.knime.knip.trackingrevised.util.Permutation;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
+import org.knime.network.core.algorithm.search.dfs.WeakConnectedComponent;
 import org.knime.network.core.api.Feature;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.KPartiteGraphView;
@@ -465,7 +468,68 @@ public class TransitionGraph {
 	// return graphs;
 	// }
 
+	/**
+	 * Creates a collection of subgraphs of a {@link TransitionGraph}. If there
+	 * are no edges, {@link TransitionGraph#createAllSubGraphs(TransitionGraph)}
+	 * is called.
+	 * 
+	 * @param tg
+	 *            a {@link TransitionGraph}
+	 * @return a {@link Collection} of {@link TransitionGraph}s
+	 */
 	public static Collection<TransitionGraph> createAllPossibleGraphs(
+			TransitionGraph tg) {
+		if (tg.edges.size() == 0)
+			return createAllSubGraphs(tg);
+		else
+			return createLearningExamples(tg);
+	}
+
+	public static Collection<TransitionGraph> createLearningExamples(
+			TransitionGraph tg) {
+		List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
+		
+		
+		try {
+			WeakConnectedComponent wcc = new WeakConnectedComponent(new ExecutionMonitor(), tg.getNet());
+			wcc.start(new ExecutionMonitor());
+			//neg node ids
+			List<String> negNodeIds = new LinkedList<String>();
+			for(KPartiteGraph<PersistentObject, Partition> graph : wcc.createComponentViews(new ExecutionMonitor(), tg.getNet())) {
+				if(graph.getNoOfEdges() > 0)
+				{
+					//positive example
+					graphs.add(new TransitionGraph(graph));
+				} else
+				{
+					//neg examples
+					assert graph.getNoOfNodes() == 1;
+					negNodeIds.add(graph.getNodes().next().getId());
+				}
+			}
+			
+			if(negNodeIds.size() > 0) {
+				System.out.println("NEG NODES!!! " + negNodeIds.size());
+			}
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		} catch (CanceledExecutionException e) {
+			e.printStackTrace();
+		}
+		
+		
+		return graphs;
+	}
+
+	/**
+	 * Creates all possible combinations of nodes in a {@link TransitionGraph}
+	 * without edges.
+	 * 
+	 * @param tg
+	 *            the source
+	 * @return a {@link Collection} of {@link TransitionGraph}s
+	 */
+	public static Collection<TransitionGraph> createAllSubGraphs(
 			TransitionGraph tg) {
 		if (tg.getPartitions().size() != 2)
 			throw new IllegalArgumentException(

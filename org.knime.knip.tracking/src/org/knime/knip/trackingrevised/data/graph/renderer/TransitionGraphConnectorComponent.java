@@ -1,9 +1,12 @@
 package org.knime.knip.trackingrevised.data.graph.renderer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -21,8 +24,11 @@ import org.knime.base.util.kdtree.NearestNeighbour;
 import org.knime.knip.core.awt.AWTImageTools;
 import org.knime.knip.core.awt.ImageRenderer;
 import org.knime.knip.core.awt.RendererFactory;
+import org.knime.knip.trackingrevised.data.TransitionGraphDataObject;
+import org.knime.knip.trackingrevised.data.graph.Edge;
 import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
+import org.knime.network.core.core.exception.PersistenceException;
 
 import cern.colt.Arrays;
 
@@ -33,20 +39,28 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 	 */
 	private static final long serialVersionUID = -6266875939313108708L;
 
+	private TransitionGraphDataObject tgdo;
 	private TransitionGraph tg;
 	private ImgPlus<T> img;
 	private BufferedImage bimg;
 
 	private KDTree<Node> kdTree;
 
-	private Node selectedNode = null;
+	//would be set if mouse is near a node
+	private Node nearestNode = null;
+	//start point for dragging event
+	private Node startNode = null;
+	//last mouse position
+	private Point lastPoint;
 
 	private long[] imgOffsets;
 
-	private int partWidth;
+	private int partitionWidth;
 
-	public TransitionGraphConnectorComponent(TransitionGraph tg, ImgPlus<T> img) {
-		this.tg = tg;
+
+	public TransitionGraphConnectorComponent(TransitionGraphDataObject tgdo, ImgPlus<T> img) {
+		this.tgdo = tgdo;
+		this.tg = tgdo.getTransitionGraph();
 		this.img = img;
 
 		Dimension dim = new Dimension((int) img.max(0), (int) img.max(1));
@@ -62,9 +76,9 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 
 		KDTreeBuilder<Node> treeBuilder = new KDTreeBuilder<Node>(2);
 		imgOffsets = tg.getImageOffsets();
-		partWidth = ((int) img.max(0) - (TransitionGraphRenderer.BORDER * (tg
+		partitionWidth = ((int) img.max(0) - (TransitionGraphRenderer.BORDER * (tg
 				.getPartitions().size() - 1))) / (tg.getPartitions().size());
-		System.out.println(partWidth);
+		System.out.println(partitionWidth);
 		for (String partition : tg.getPartitions()) {
 			for (Node node : tg.getNodes(partition)) {
 				double[] coords = new double[2];
@@ -77,14 +91,14 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 		kdTree = treeBuilder.buildTree();
 	}
 
-	private double getX(Node n) {
-		return n.getPosition().getDoublePosition(0)
+	private int getX(Node n) {
+		return (int)Math.round(n.getPosition().getDoublePosition(0)
 				- imgOffsets[0]
-				+ (((n.getTime() - tg.getStartTime()) * (TransitionGraphRenderer.BORDER + partWidth)));
+				+ (((n.getTime() - tg.getStartTime()) * (TransitionGraphRenderer.BORDER + partitionWidth))));
 	}
 
-	private double getY(Node n) {
-		return n.getPosition().getDoublePosition(1) - imgOffsets[1];
+	private int getY(Node n) {
+		return (int)Math.round(n.getPosition().getDoublePosition(1) - imgOffsets[1]);
 	}
 
 	public BufferedImage prepareBufferedImage() {
@@ -97,57 +111,101 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 	@Override
 	public void paint(Graphics g) {
 		super.paint(g);
+		Graphics2D g2d = (Graphics2D) g;
 		g.drawImage(bimg, 0, 0, null);
+		
+		int radius = 10;
 
-		if (selectedNode != null) {
-			g.setColor(Color.RED);
-			g.drawRect((int) getX(selectedNode), (int) getY(selectedNode), 5, 5);
+		g.setColor(Color.YELLOW);
+		g.drawString("#edges: " + tg.getEdges().size(), 0, 10);
+		
+		for(Edge edge : tg.getEdges()) {
+			g.drawLine(getX(edge.getStartNode()), getY(edge.getStartNode()), getX(edge.getEndNode()), getY(edge.getEndNode()));
 		}
+		
+		if(startNode != null) {
+			g2d.setColor(Color.RED);
+			g2d.fillRect(getX(startNode) - radius/2, getY(startNode) - radius/2, radius, radius);
+			g2d.drawLine(getX(startNode), getY(startNode), lastPoint.x, lastPoint.y);
+		}
+		if (nearestNode != null) {
+			g2d.setColor(Color.CYAN);
+			Stroke stroke = g2d.getStroke();
+			g2d.setStroke(new BasicStroke(1.0f,
+                    BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_MITER,
+                    10.0f, new float[]{2}, 0.0f));
+			g2d.drawRect(getX(nearestNode) - radius/2, getY(nearestNode) - radius/2, radius, radius);
+			g2d.setStroke(stroke);
+		}
+		
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		//nothing
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		//nothing
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		//nothing
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		//nothing
+		if(e.getButton() == MouseEvent.BUTTON2)
+			fireGraphEdited();
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		System.out.println("to connect: " + startNode + " -> " + nearestNode);
+		try {
+			tg.createEdge(startNode, nearestNode);
+		} catch (PersistenceException e1) {
+			e1.printStackTrace();
+		}
+		startNode = null;
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		mouseMovement(e);
+		if(startNode == null) {
+			startNode = nearestNode;
+		}
+		repaint();
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		Point point = e.getPoint();
+		mouseMovement(e);
+	}
+	
+	private void mouseMovement(MouseEvent e) {
+		lastPoint = e.getPoint();
 		List<NearestNeighbour<Node>> list = kdTree.getMaxDistanceNeighbours(
-				new double[] { point.x, point.y }, 20);
+				new double[] { lastPoint.x, lastPoint.y }, 20);
 		if (!list.isEmpty()) {
-			selectedNode = list.get(0).getData();
+			nearestNode = list.get(0).getData();
 			repaint();
 		}
 	}
-
+	
+	private TransitionGraphComponentListener m_listener = null;
+	
+	public void setTransitionGraphComponentListener(TransitionGraphComponentListener listener) {
+		m_listener = listener;
+	}
+	
+	private void fireGraphEdited() {
+		if(m_listener != null)
+			m_listener.graphEdited(tgdo);
+	}
 }

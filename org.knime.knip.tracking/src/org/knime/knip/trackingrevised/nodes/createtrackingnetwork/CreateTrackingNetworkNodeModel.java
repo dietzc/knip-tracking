@@ -3,11 +3,14 @@ package org.knime.knip.trackingrevised.nodes.createtrackingnetwork;
 import java.util.HashSet;
 import java.util.Set;
 
+import net.imglib2.Cursor;
 import net.imglib2.img.Img;
 import net.imglib2.meta.Axes;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataRow;
@@ -29,6 +32,7 @@ import org.knime.knip.base.data.IntervalValue;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.base.data.labeling.LabelingValue;
+import org.knime.knip.core.awt.AWTImageTools;
 import org.knime.knip.core.util.ImgUtils;
 import org.knime.knip.trackingrevised.util.OffsetHandling;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
@@ -42,6 +46,8 @@ import org.knime.network.core.core.feature.FeatureTypeFactory;
 import org.knime.network.core.knime.node.AbstractGraphNodeModel;
 import org.knime.network.core.knime.port.GraphPortObject;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
+
+import cern.colt.Arrays;
 
 /**
  * This is the model implementation of CreateTrackingNetwork. Creates a tracking
@@ -277,6 +283,10 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 					.getCell(bitmaskIdx);
 			ImgPlus<T> cutImg = cutBitmask(
 					((ImgPlusValue<T>) imgcell).getImgPlus(), bitmaskCell);
+//			if(count == 1) {
+//				AWTImageTools.showInFrame(((ImgPlusValue<T>) imgcell).getImgPlus(), "blubb!");
+//				AWTImageTools.showInFrame(cutImg, "bla");
+//			}
 			net.addFeature(node, TrackingConstants.FEATURE_SEGMENT_IMG, cutImg);
 
 			exec.checkCanceled();
@@ -289,11 +299,24 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 		return new PortObject[] { new GraphPortObject<KPartiteGraph<PersistentObject, Partition>>(
 				net) };
 	}
-
+	
 	private ImgPlus<T> cutBitmask(ImgPlus<T> img,
 			ImgPlusCell<BitType> bitmaskCell) {
 		Img<T> resultImg = ImgUtils.<BitType, T> createEmptyCopy(bitmaskCell
 				.getImgPlus().getImg(), img.firstElement().createVariable());
+		long[] min = bitmaskCell.getMinimum();
+		long[] max = bitmaskCell.getMaximum();
+		//min contains offset, max does not!
+		for(int d = 0; d < min.length; d++) {
+			max[d] += min[d];
+		}
+		System.out.println(Arrays.toString(min) + " " + Arrays.toString(max));
+		IntervalView<T> iv = Views.interval(img, min, max);
+		Cursor<T> cursor = iv.cursor();
+		for(T pixel : resultImg) {
+			cursor.next();
+			pixel.set(cursor.get());
+		}
 		return new ImgPlus<T>(resultImg);
 	}
 

@@ -26,7 +26,7 @@ import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 
 public class TransitionGraphRenderer {
-
+	
 	private static final int OVERVIEW_BORDER_SIZE = 50;
 
 	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> renderTransitionGraph(
@@ -43,59 +43,56 @@ public class TransitionGraphRenderer {
 				}
 			}
 		}
-
+		
 		if (rect == null)
-			return new ImgPlus<T>(new ArrayImgFactory<T>().create(new long[] {
-					0, 0 }, baseImg.firstElement().createVariable()));
-
+			return new ImgPlus<T>(
+					new ArrayImgFactory<T>().create(new long[] {
+							0, 0 }, baseImg.firstElement().createVariable()));
+		
 		{ // increase rect to increase overview
 			double minX = rect.getMinX();
 			double minY = rect.getMinY();
 			double maxX = rect.getMaxX();
 			double maxY = rect.getMaxY();
-
+			
 			minX = Math.max(0, minX - OVERVIEW_BORDER_SIZE);
 			minY = Math.max(0, minY - OVERVIEW_BORDER_SIZE);
 			maxX = Math.min(baseImg.max(0), maxX + OVERVIEW_BORDER_SIZE);
 			maxY = Math.min(baseImg.max(1), maxY + OVERVIEW_BORDER_SIZE);
-
+			
 			System.out.print("Old rect: " + rect + " ");
-			rect = new Rectangle2D.Double(minX, minY, maxX - minX + 1, maxY
-					- minY + 1);
+			rect = new Rectangle2D.Double(minX, minY, maxX - minX + 1, maxY - minY + 1);
 			System.out.println(" new one: " + rect);
 		}
-
+		
 		int imgWidth = (int) rect.getWidth();
-		int imgHeight = (int) rect.getHeight();
+		int imgHeight = (int)rect.getHeight();
 		long[] dim = new long[2];
 		dim[0] = imgWidth * base.getPartitions().size() + border
 				* (base.getPartitions().size() - 1);
 		dim[1] = imgHeight;
-		Img<T> img = new ArrayImgFactory<T>().create(dim, baseImg
-				.firstElement().createVariable());
+		Img<T> img = new ArrayImgFactory<T>()
+				.create(dim, baseImg.firstElement().createVariable());
 		RandomAccess<T> ra = img.randomAccess();
 
 		// copy original image for better overview to each partitions background
 		if (baseImg != null) {
 			int timeindex = -1;
-			if (!base.getNodes(base.getFirstPartition()).isEmpty()) {
-				timeindex = (int) base.getNodes(base.getFirstPartition())
-						.iterator().next().getTime();
+			if(!base.getNodes(base.getFirstPartition()).isEmpty()) {
+				timeindex = (int)base.getNodes(base.getFirstPartition()).iterator().next().getTime();
 			}
-			if (!base.getNodes(base.getLastPartition()).isEmpty()) {
-				timeindex = (int) base.getNodes(base.getLastPartition())
-						.iterator().next().getTime() - 1;
+			if(!base.getNodes(base.getLastPartition()).isEmpty()) {
+				timeindex = (int)base.getNodes(base.getLastPartition()).iterator().next().getTime() - 1;
 			}
-			if (timeindex == -1) {
-				throw new IllegalArgumentException(
-						"Base transition graph contains no single node.");
+			if(timeindex == -1) {
+				throw new IllegalArgumentException("Base transition graph contains no single node.");
 			}
 			long[] min = new long[3];
 			min[0] = (long) rect.getMinX();
 			min[1] = (long) rect.getMinY();
 			min[2] = timeindex;
 			long[] max = new long[3];
-			max[0] = min[0] + imgWidth - 1;
+			max[0] = min[0] + imgWidth -1;
 			max[1] = min[1] + imgHeight - 1;
 			max[2] = min[2];
 			long[] position = new long[3];
@@ -104,22 +101,20 @@ public class TransitionGraphRenderer {
 			IntervalView<T> p2 = Views.interval(baseImg, min, max);
 			for (int p = 0; p < base.getPartitions().size(); p++) {
 				int baseX = imgWidth * p + border * (p);
-				IntervalView<T> view = (p == 0) ? p1 : p2;
+				IntervalView<T> view = (p==0)?p1:p2;
 				Cursor<T> cursor = view.localizingCursor();
-				while (cursor.hasNext()) {
+				while(cursor.hasNext()) {
 					cursor.next();
 					cursor.localize(position);
 					position[0] += baseX - min[0];
 					position[1] -= min[1];
-					// System.out.println(Arrays.toString(position) + " img:  "
-					// + rect + " " + Arrays.toString(min) +
-					// Arrays.toString(max) + baseX);
+					//System.out.println(Arrays.toString(position) + " img:  " + rect + " " + Arrays.toString(min) + Arrays.toString(max) + baseX);
 					ra.setPosition(position);
 					T pixel = ra.get();
 					T value = cursor.get();
-					pixel.set(value);
+					pixel.set(value);					
 				}
-				// System.out.println("-----------------");
+				//System.out.println("-----------------");
 			}
 		}
 
@@ -150,7 +145,7 @@ public class TransitionGraphRenderer {
 						// System.out.println((cursor.getLongPosition(d) +
 						// rectDiff[d] + " vs " + dim[d] + " [" + d + "]"));
 					}
-					// ra.get().setInteger(cursor.get().getInteger() * color);
+					//ra.get().setInteger(cursor.get().getInteger() * color);
 					ra.get().setInteger(color);
 				}
 				color++;
@@ -194,26 +189,25 @@ public class TransitionGraphRenderer {
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);
 
-			BresenhamLine<T> bl = new BresenhamLine<T>(img, p1, p2);
+			BresenhamLine<T> bl = new BresenhamLine<T>(
+					img, p1, p2);
 			while (bl.hasNext()) {
 				T pixel = bl.next();
-				// pixel.setInteger(color + 25);
-				// edges always white for now
+				//pixel.setInteger(color + 25);
+				//edges always white for now
 				pixel.setOne();
 			}
 
 			// BresenhamLine<UnsignedIntType> bl = new
 			// BresenhamLine<UnsignedIntType>(img, p1,p2);
 		}
-
+		
 		T zero = img.firstElement().createVariable();
 		zero.setZero();
 		T max = img.firstElement().createVariable();
 		max.setReal(max.getMaxValue());
-		ImgNormalize<T> imgNormalize = new ImgNormalize<T>(0, img
-				.firstElement().createVariable(),
-				new ValuePair<T, T>(zero, max), true);
-
+		ImgNormalize<T> imgNormalize = new ImgNormalize<T>(0, img.firstElement().createVariable(), new ValuePair<T, T>(zero, max), true);
+		
 		imgNormalize.compute(img, img);
 
 		return new ImgPlus<T>(img);

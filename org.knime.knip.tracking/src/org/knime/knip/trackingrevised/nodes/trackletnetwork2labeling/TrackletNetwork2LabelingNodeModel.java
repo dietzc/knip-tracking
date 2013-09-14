@@ -30,9 +30,8 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.base.data.labeling.LabelingCell;
 import org.knime.knip.base.data.labeling.LabelingCellFactory;
-import org.knime.knip.core.awt.labelingcolortable.DefaultLabelingColorTable;
-import org.knime.knip.core.data.img.DefaultLabelingMetadata;
-import org.knime.knip.core.data.img.LabelingMetadata;
+import org.knime.knip.core.data.img.GeneralMetadata;
+import org.knime.knip.core.data.img.ImgMetadataImpl;
 import org.knime.knip.trackingrevised.util.OffsetHandling;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
 import org.knime.network.core.algorithm.search.dfs.WeakConnectedComponent;
@@ -112,8 +111,7 @@ public class TrackletNetwork2LabelingNodeModel extends
 		String rowKey = net.getFeatureString(net,
 				TrackingConstants.NETWORK_FEATURE_IMAGE_ROWKEY);
 		n.setName(rowKey);
-		LabelingMetadata mdata = new DefaultLabelingMetadata(dims.length,
-				new DefaultLabelingColorTable());
+		GeneralMetadata mdata = new ImgMetadataImpl(dims.length);
 		mdata.setSource(new DefaultSourced().getSource());
 
 		// mdata.setAxis(Axes.get("X"), 0);
