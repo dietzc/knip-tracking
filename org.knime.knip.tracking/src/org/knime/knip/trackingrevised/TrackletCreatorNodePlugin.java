@@ -2,7 +2,7 @@
  * $Revision$ $Date$ $Author$
  *
  */
-package org.knime.knip.trackingrevised.nodes.trackletcreator;
+package org.knime.knip.trackingrevised;
 
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;

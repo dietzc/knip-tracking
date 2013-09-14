@@ -1,5 +1,6 @@
 package org.knime.knip.trackingrevised.nodes.createtrackingnetwork;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,7 +33,6 @@ import org.knime.knip.base.data.IntervalValue;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.base.data.labeling.LabelingValue;
-import org.knime.knip.core.awt.AWTImageTools;
 import org.knime.knip.core.util.ImgUtils;
 import org.knime.knip.trackingrevised.util.OffsetHandling;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
@@ -46,8 +46,6 @@ import org.knime.network.core.core.feature.FeatureTypeFactory;
 import org.knime.network.core.knime.node.AbstractGraphNodeModel;
 import org.knime.network.core.knime.port.GraphPortObject;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
-
-import cern.colt.Arrays;
 
 /**
  * This is the model implementation of CreateTrackingNetwork. Creates a tracking

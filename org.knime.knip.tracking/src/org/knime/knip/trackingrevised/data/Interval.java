@@ -1,5 +1,6 @@
 package org.knime.knip.trackingrevised.data;
 
+import net.imglib2.meta.CalibratedAxis;
 import net.imglib2.meta.CalibratedSpace;
 import net.imglib2.meta.Named;
 import net.imglib2.meta.Sourced;
@@ -19,7 +20,7 @@ public class Interval implements IntervalValue {
 
 	private Named name;
 	private Sourced source;
-	private CalibratedSpace calibratedSpace;
+	private CalibratedSpace<CalibratedAxis> calibratedSpace;
 
 	public static Interval createFromDimension(long[] dimension) {
 		long[] max = new long[dimension.length];
@@ -34,7 +35,7 @@ public class Interval implements IntervalValue {
 	}
 
 	public Interval(long[] minimum, long[] maximum, Named name, Sourced source,
-			CalibratedSpace calibratedSpace) {
+			CalibratedSpace<CalibratedAxis> calibratedSpace) {
 		this.minimum = minimum;
 		this.maximum = maximum;
 		this.name = name;
@@ -63,7 +64,7 @@ public class Interval implements IntervalValue {
 	}
 
 	@Override
-	public CalibratedSpace getCalibratedSpace() {
+	public CalibratedSpace<CalibratedAxis> getCalibratedSpace() {
 		return calibratedSpace;
 	}
 

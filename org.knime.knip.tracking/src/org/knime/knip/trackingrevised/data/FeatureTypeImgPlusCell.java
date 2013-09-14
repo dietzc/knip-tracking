@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import net.imglib2.img.Img;
 import net.imglib2.meta.ImgPlus;
+import net.imglib2.meta.ImgPlusMetadata;
 import net.imglib2.type.numeric.RealType;
 
 import org.knime.core.data.DataCell;
@@ -14,8 +15,7 @@ import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
-import org.knime.knip.core.data.img.ImgMetadata;
-import org.knime.knip.core.data.img.ImgMetadataImpl;
+import org.knime.knip.core.data.img.DefaultImgMetadata;
 import org.knime.knip.core.io.externalization.BufferedDataInputStream;
 import org.knime.knip.core.io.externalization.BufferedDataOutputStream;
 import org.knime.knip.core.io.externalization.ExternalizerManager;
@@ -90,8 +90,8 @@ public class FeatureTypeImgPlusCell<T extends RealType<T>> extends
 					new ByteArrayInputStream(
 							convertString2ByteArray(valueString)));
 			Img<T> img = ExternalizerManager.<Img<T>> read(inStream);
-			ImgMetadata metadata = ExternalizerManager
-					.<ImgMetadata> read(inStream);
+			ImgPlusMetadata metadata = ExternalizerManager
+					.<ImgPlusMetadata> read(inStream);
 			// long[] min = new long[imgPlus.numDimensions()];
 			// imgPlus.min(min);
 			// System.out.println(Arrays.toString(min));
@@ -128,8 +128,9 @@ public class FeatureTypeImgPlusCell<T extends RealType<T>> extends
 			BufferedDataOutputStream stream = new BufferedDataOutputStream(
 					streamByte);
 			ExternalizerManager.<Img<T>> write(stream, value.getImg());
-			ExternalizerManager.<ImgMetadata> write(stream,
-					new ImgMetadataImpl(value), ImgMetadata.class);
+			ExternalizerManager.<ImgPlusMetadata> write(stream,
+					new DefaultImgMetadata(value), ImgPlusMetadata.class);
+			
 			stream.flush();
 			return convertByteArray2String(streamByte.toByteArray());
 		} catch (Exception e) {

@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -29,8 +30,6 @@ import org.knime.knip.trackingrevised.data.graph.Edge;
 import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.network.core.core.exception.PersistenceException;
-
-import cern.colt.Arrays;
 
 public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 		JPanel implements MouseListener, MouseMotionListener {
