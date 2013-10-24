@@ -180,6 +180,21 @@ public class Node extends GraphObject implements Comparable<Node> {
 		}
 		return null;
 	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public ImgPlusValue<BitType> getSegmentImage() {
+		try {
+			return (ImgPlusValue<BitType>) getNetwork().getFeatureCell(
+					FileStoreFactory.createNotInWorkflowFileStoreFactory(),
+					getPersistentObject(), TrackingConstants.FEATURE_SEGMENT_IMG);
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		} catch (InvalidFeatureException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	public double euclideanDistanceTo(Node targetNode) {
 		RealPoint myPosition = this.getPosition();

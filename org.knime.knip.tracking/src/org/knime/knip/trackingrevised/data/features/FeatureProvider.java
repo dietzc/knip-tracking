@@ -17,8 +17,13 @@ public class FeatureProvider {
 	private static int featureCount = 0;
 
 	static {
-		addFeatureClass(TransitionFeatures.class);
+		//addFeatureClass(TransitionFeatures.class);
+		//addFeatureClass(IntensityFeatures.class);
+		
+		addFeatureClass(PositionFeatures.class);
 		addFeatureClass(IntensityFeatures.class);
+		addFeatureClass(ShapeFeatures.class);
+		addFeatureClass(OtherFeatures.class);
 	}
 
 	public static double[] getFeatureVector(TransitionGraph tg) {

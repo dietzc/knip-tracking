@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 
 import net.imglib2.meta.Axes;
-import net.imglib2.meta.DefaultCalibratedAxis;
 import net.imglib2.meta.ImgPlus;
+import net.imglib2.meta.axis.DefaultLinearAxis;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 
 import org.knime.core.data.DataColumnSpecCreator;
@@ -63,7 +63,7 @@ public class TrackingImageGeneratorNodeModel extends NodeModel implements
 		TrackingImageGenerator tig = new TrackingImageGenerator();
 		ImgPlus<UnsignedByteType> img = ImgPlus.wrap(tig.parse(m_code
 				.getStringValue()));
-		img.setAxis(new DefaultCalibratedAxis(Axes.TIME), img.numDimensions() - 1);
+		img.setAxis(new DefaultLinearAxis(Axes.TIME), img.numDimensions() - 1);
 		DataContainer cont = exec.createDataContainer(createOutSpec());
 		cont.addRowToTable(new DefaultRow("TrackingImage#1",
 				new ImgPlusCellFactory(exec).createCell(img)));

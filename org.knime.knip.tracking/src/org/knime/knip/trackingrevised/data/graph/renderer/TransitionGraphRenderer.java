@@ -20,7 +20,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.knime.knip.base.data.img.ImgPlusValue;
-import org.knime.knip.core.ops.img.ImgNormalize;
+import org.knime.knip.core.ops.img.ImgPlusNormalize;
 import org.knime.knip.trackingrevised.data.graph.Edge;
 import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
@@ -205,17 +205,19 @@ public class TransitionGraphRenderer {
 		zero.setZero();
 		T max = img.firstElement().createVariable();
 		max.setReal(max.getMaxValue());
-		ImgNormalize<T> imgNormalize = new ImgNormalize<T>(0, img
+		ImgPlusNormalize<T> imgNormalize = new ImgPlusNormalize<T>(0, img
 				.firstElement().createVariable(),
 				new ValuePair<T, T>(zero, max), true);
 
-		imgNormalize.compute(img, img);
+		ImgPlus<T> imgPlus = new ImgPlus<T>(img);
+		
+		imgNormalize.compute(imgPlus, imgPlus);
 
 		// safe offsets in TransitionGraph to ease orientation
 		links.setImageOffsets(new long[] { (long) rect.getMinX(),
 				(long) rect.getMinY() });
 
-		return new ImgPlus<T>(img);
+		return imgPlus;
 	}
 
 }

@@ -8,11 +8,11 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.labeling.LabelingType;
 import net.imglib2.labeling.NativeImgLabeling;
 import net.imglib2.meta.Axes;
-import net.imglib2.meta.DefaultCalibratedAxis;
 import net.imglib2.meta.DefaultNamed;
 import net.imglib2.meta.DefaultSourced;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.meta.Named;
+import net.imglib2.meta.axis.DefaultLinearAxis;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 
@@ -122,7 +122,7 @@ public class TrackletNetwork2LabelingNodeModel extends
 		String[] parts = net.getStringFeature(net,
 				TrackingConstants.NETWORK_FEATURE_IMAGE_AXES).split("\\|");
 		for (int d = 0; d < dims.length; d++) {
-			mdata.setAxis(new DefaultCalibratedAxis(Axes.get(parts[d])), d);
+			mdata.setAxis(new DefaultLinearAxis(Axes.get(parts[d])), d);
 		}
 
 		cont.addRowToTable(new DefaultRow(rowKey, new LabelingCellFactory(exec)
