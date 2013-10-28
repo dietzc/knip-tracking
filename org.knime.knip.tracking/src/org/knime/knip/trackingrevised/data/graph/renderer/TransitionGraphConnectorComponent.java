@@ -17,7 +17,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import net.imglib2.meta.ImgPlus;
-import net.imglib2.type.Type;
+import net.imglib2.type.numeric.RealType;
 
 import org.knime.base.util.kdtree.KDTree;
 import org.knime.base.util.kdtree.KDTreeBuilder;
@@ -31,24 +31,24 @@ import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.network.core.core.exception.PersistenceException;
 
-public class TransitionGraphConnectorComponent<T extends Type<T>> extends
+public class TransitionGraphConnectorComponent<T extends RealType<T>> extends
 		JPanel implements MouseListener, MouseMotionListener {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6266875939313108708L;
 
-	private TransitionGraphDataObject tgdo;
-	private TransitionGraph tg;
+	private TransitionGraphDataObject<T> tgdo;
+	private TransitionGraph<T> tg;
 	private ImgPlus<T> img;
 	private BufferedImage bimg;
 
-	private KDTree<Node> kdTree;
+	private KDTree<Node<T>> kdTree;
 
 	//would be set if mouse is near a node
-	private Node nearestNode = null;
+	private Node<T> nearestNode = null;
 	//start point for dragging event
-	private Node startNode = null;
+	private Node<T> startNode = null;
 	//last mouse position
 	private Point lastPoint;
 
@@ -57,7 +57,7 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 	private int partitionWidth;
 
 
-	public TransitionGraphConnectorComponent(TransitionGraphDataObject tgdo, ImgPlus<T> img) {
+	public TransitionGraphConnectorComponent(TransitionGraphDataObject<T> tgdo, ImgPlus<T> img) {
 		this.tgdo = tgdo;
 		this.tg = tgdo.getTransitionGraph();
 		this.img = img;
@@ -73,13 +73,13 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 		this.addMouseListener(this);
 		this.addMouseMotionListener(this);
 
-		KDTreeBuilder<Node> treeBuilder = new KDTreeBuilder<Node>(2);
+		KDTreeBuilder<Node<T>> treeBuilder = new KDTreeBuilder<Node<T>>(2);
 		imgOffsets = tg.getImageOffsets();
 		partitionWidth = ((int) img.max(0) - (TransitionGraphRenderer.BORDER * (tg
 				.getPartitions().size() - 1))) / (tg.getPartitions().size());
 		System.out.println(partitionWidth);
 		for (String partition : tg.getPartitions()) {
-			for (Node node : tg.getNodes(partition)) {
+			for (Node<T> node : tg.getNodes(partition)) {
 				double[] coords = new double[2];
 				coords[0] = getX(node);
 				coords[1] = getY(node);
@@ -90,13 +90,13 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 		kdTree = treeBuilder.buildTree();
 	}
 
-	private int getX(Node n) {
+	private int getX(Node<T> n) {
 		return (int)Math.round(n.getPosition().getDoublePosition(0)
 				- imgOffsets[0]
 				+ (((n.getTime() - tg.getStartTime()) * (TransitionGraphRenderer.BORDER + partitionWidth))));
 	}
 
-	private int getY(Node n) {
+	private int getY(Node<T> n) {
 		return (int)Math.round(n.getPosition().getDoublePosition(1) - imgOffsets[1]);
 	}
 
@@ -118,7 +118,7 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 		g.setColor(Color.YELLOW);
 		g.drawString("#edges: " + tg.getEdges().size(), 0, 10);
 		
-		for(Edge edge : tg.getEdges()) {
+		for(Edge<T> edge : tg.getEdges()) {
 			g.drawLine(getX(edge.getStartNode()), getY(edge.getStartNode()), getX(edge.getEndNode()), getY(edge.getEndNode()));
 		}
 		
@@ -189,7 +189,7 @@ public class TransitionGraphConnectorComponent<T extends Type<T>> extends
 	
 	private void mouseMovement(MouseEvent e) {
 		lastPoint = e.getPoint();
-		List<NearestNeighbour<Node>> list = kdTree.getMaxDistanceNeighbours(
+		List<NearestNeighbour<Node<T>>> list = kdTree.getMaxDistanceNeighbours(
 				new double[] { lastPoint.x, lastPoint.y }, 20);
 		if (!list.isEmpty()) {
 			nearestNode = list.get(0).getData();

@@ -7,6 +7,7 @@ import java.util.List;
 
 import net.imglib2.RealPoint;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.RealType;
 
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
@@ -20,7 +21,7 @@ import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.exception.InvalidFeatureException;
 import org.knime.network.core.core.exception.PersistenceException;
 
-public class Node extends GraphObject implements Comparable<Node> {
+public class Node<T extends RealType<T>> extends GraphObject implements Comparable<Node<T>> {
 
 	private final static String CENTROID_X = "Centroid X";
 	private final static String CENTROID_Y = "Centroid Y";
@@ -74,10 +75,10 @@ public class Node extends GraphObject implements Comparable<Node> {
 	 *            the {@link TransitionGraph}
 	 * @return the copy of target.
 	 */
-	public Node createCopyIn(TransitionGraph target) {
+	public Node<T> createCopyIn(TransitionGraph target) {
 		try {
 			// create node in net, but do not add to graph yet
-			Node node = target.createNode(this.getID(), false);
+			Node<T> node = target.createNode(this.getID(), false);
 			PersistentObject targetnode = node.getPersistentObject();
 			for (Feature feature : this.getNetwork().getFeatures()) {
 				Object value = this.getNetwork().getFeatureValue(
@@ -103,11 +104,11 @@ public class Node extends GraphObject implements Comparable<Node> {
 	}
 
 	@Override
-	public int compareTo(Node o) {
+	public int compareTo(Node<T> o) {
 		return this.getID().compareTo(o.getID());
 	}
 
-	public double distanceTo(Node otherNode) {
+	public double distanceTo(Node<T> otherNode) {
 		double minDist = Double.MAX_VALUE;
 
 		// check if # followers is equal
@@ -149,7 +150,7 @@ public class Node extends GraphObject implements Comparable<Node> {
 
 	public Rectangle2D getImageRectangle() {
 		try {
-			ImgPlusValue<?> ipv = (ImgPlusValue<?>) getNetwork()
+			ImgPlusValue<T> ipv = (ImgPlusValue<T>) getNetwork()
 					.getFeatureCell(
 							FileStoreFactory
 									.createNotInWorkflowFileStoreFactory(),
@@ -183,9 +184,9 @@ public class Node extends GraphObject implements Comparable<Node> {
 	
 	
 	@SuppressWarnings("unchecked")
-	public ImgPlusValue<BitType> getSegmentImage() {
+	public ImgPlusValue<T> getSegmentImage() {
 		try {
-			return (ImgPlusValue<BitType>) getNetwork().getFeatureCell(
+			return (ImgPlusValue<T>) getNetwork().getFeatureCell(
 					FileStoreFactory.createNotInWorkflowFileStoreFactory(),
 					getPersistentObject(), TrackingConstants.FEATURE_SEGMENT_IMG);
 		} catch (PersistenceException e) {
@@ -196,7 +197,7 @@ public class Node extends GraphObject implements Comparable<Node> {
 		return null;
 	}
 
-	public double euclideanDistanceTo(Node targetNode) {
+	public double euclideanDistanceTo(Node<T> targetNode) {
 		RealPoint myPosition = this.getPosition();
 		RealPoint targetPosition = targetNode.getPosition();
 		double dist = 0.0;
@@ -216,7 +217,7 @@ public class Node extends GraphObject implements Comparable<Node> {
 			String featName = it.next();
 			vec[i] = getDoubleFeature(featName);
 			for (Edge edge : outgoing) {
-				Node endNode = edge.getEndNode();
+				Node<T> endNode = edge.getEndNode();
 				vec[i] -= endNode.getDoubleFeature(featName);
 			}
 		}
@@ -228,7 +229,7 @@ public class Node extends GraphObject implements Comparable<Node> {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Node) {
-			return getID().equals(((Node) obj).getID());
+			return getID().equals(((Node<T>) obj).getID());
 		}
 		return super.equals(obj);
 	}

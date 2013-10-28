@@ -45,5 +45,8 @@ public class PositionFeatures extends FeatureClass {
 			}
 		});
 	}
+	
+	//TODO: overlap with border ?
+	//TODO: distance to border ?
 
 }

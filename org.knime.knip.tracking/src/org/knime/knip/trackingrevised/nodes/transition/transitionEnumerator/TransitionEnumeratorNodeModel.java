@@ -71,10 +71,10 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 				.getCell(0)).getImgPlus();
 
 		for (DataRow row : inData[0]) {
-			TransitionGraph tg = new TransitionGraph(
+			TransitionGraph<T> tg = new TransitionGraph<T>(
 					((GraphValue) row.getCell(graphColIdx)).getView());
 			int variantCounter = 0;
-			for (TransitionGraph tgVariant : TransitionGraph
+			for (TransitionGraph<T> tgVariant : TransitionGraph
 					.createAllPossibleGraphs(tg)) {
 				DataCell[] cells = new DataCell[cont.getTableSpec()
 						.getNumColumns()];

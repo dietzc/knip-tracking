@@ -1,15 +1,17 @@
 package org.knime.knip.trackingrevised.data;
 
+import net.imglib2.type.numeric.RealType;
+
 import org.knime.core.data.RowKey;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 
-public class TransitionGraphDataObject {
+public class TransitionGraphDataObject<T extends RealType<T>> {
 	private RowKey rowKey;
-	private TransitionGraph tg;
+	private TransitionGraph<T> tg;
 	private String label;
 	//TODO: ImgPlus ?
 	
-	public TransitionGraphDataObject(final RowKey key, TransitionGraph tg, String label) {
+	public TransitionGraphDataObject(final RowKey key, TransitionGraph<T> tg, String label) {
 		this.rowKey = key;
 		this.tg = tg;
 		this.label = label;
@@ -19,7 +21,7 @@ public class TransitionGraphDataObject {
 		return rowKey;
 	}
 	
-	public TransitionGraph getTransitionGraph() {
+	public TransitionGraph<T> getTransitionGraph() {
 		return tg;
 	}
 	

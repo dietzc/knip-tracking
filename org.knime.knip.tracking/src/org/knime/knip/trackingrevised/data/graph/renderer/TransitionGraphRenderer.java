@@ -31,11 +31,11 @@ public class TransitionGraphRenderer {
 	public static final int BORDER = 10;
 
 	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> renderTransitionGraph(
-			TransitionGraph base, ImgPlus<T> baseImg, TransitionGraph links) {
+			TransitionGraph<T> base, ImgPlus<T> baseImg, TransitionGraph<T> links) {
 
 		Rectangle2D rect = null;
 		for (String partition : base.getPartitions()) {
-			for (Node node : base.getNodes(partition)) {
+			for (Node<T> node : base.getNodes(partition)) {
 				if (rect == null) {
 					rect = node.getImageRectangle();
 				} else {
@@ -123,14 +123,14 @@ public class TransitionGraphRenderer {
 			}
 		}
 
-		Map<Node, Point> positions = new HashMap<Node, Point>();
+		Map<Node<T>, Point> positions = new HashMap<Node<T>, Point>();
 
 		long color = 10;
 		long[] rectDiff = new long[2];
 		int partitionIndex = 0;
 		for (String partition : links.getPartitions()) {
 
-			for (Node node : links.getNodes(partition)) {
+			for (Node<T> node : links.getNodes(partition)) {
 				ImgPlusValue<?> bitmask = node.getBitmask();
 				Rectangle2D r = node.getImageRectangle();
 				rectDiff[0] = (long) (r.getMinX() - rect.getMinX())
@@ -187,9 +187,9 @@ public class TransitionGraphRenderer {
 		}
 		// ---borders
 
-		for (Edge edge : links.getEdges()) {
-			Node start = edge.getStartNode();
-			Node end = edge.getEndNode();
+		for (Edge<T> edge : links.getEdges()) {
+			Node<T> start = edge.getStartNode();
+			Node<T> end = edge.getEndNode();
 
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);

@@ -9,6 +9,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.ops.operation.randomaccessibleinterval.unary.ConvexHull2D;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.RealType;
 
 import org.knime.knip.core.data.algebra.RealVector;
 import org.knime.knip.trackingrevised.data.graph.Edge;
@@ -24,25 +25,25 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Number difference")
-	public static double numDiff(TransitionGraph tg) {
+	public static <T extends RealType<T>> double numDiff(TransitionGraph<T> tg) {
 		return tg.getNodes(tg.getLastPartition()).size()
 				- tg.getNodes(tg.getFirstPartition()).size();
 	}
 
 	@Feature(name = "First partition count")
-	public static double fpc(TransitionGraph tg) {
+	public static <T extends RealType<T>> double fpc(TransitionGraph<T> tg) {
 		return tg.getNodes(tg.getFirstPartition()).size();
 	}
 
 	@Feature(name = "Last partition count")
-	public static double lpc(TransitionGraph tg) {
+	public static <T extends RealType<T>> double lpc(TransitionGraph<T> tg) {
 		return tg.getNodes(tg.getLastPartition()).size();
 	}
 
 	@Feature(name = "Division Angle Pattern")
-	public static double divisionAnglePattern(TransitionGraph tg) {
+	public static <T extends RealType<T>> double divisionAnglePattern(TransitionGraph<T> tg) {
 		double angle = Double.NaN;
-		for (Node node : tg.getNodes(tg.getFirstPartition())) {
+		for (Node<T> node : tg.getNodes(tg.getFirstPartition())) {
 			// System.out.println(node + " " + node.getOutgoingEdges().size() +
 			// " " + node.getOutgoingEdges());
 			if (node.getOutgoingEdges().size() == 2) {
@@ -75,9 +76,9 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Merge Angle Pattern")
-	public static double mergeAnglePattern(TransitionGraph tg) {
+	public static <T extends RealType<T>> double mergeAnglePattern(TransitionGraph<T> tg) {
 		double angle = Double.NaN;
-		for (Node node : tg.getNodes(tg.getLastPartition())) {
+		for (Node<T> node : tg.getNodes(tg.getLastPartition())) {
 			if (node.getIncomingEdges().size() == 2) {
 				double[] tmp = new double[node.getPosition().numDimensions()];
 				node.getPosition().localize(tmp);
@@ -115,7 +116,7 @@ public class TransitionFeatures extends FeatureClass {
 	 * @return the shape compactness value
 	 */
 	@Feature(name = "Shape Compactness")
-	public static double shapeCompactness(TransitionGraph tg) {
+	public static <T extends RealType<T>> double shapeCompactness(TransitionGraph<T> tg) {
 		if (tg.getNodes(tg.getFirstPartition()).size() == 0
 				|| tg.getNodes(tg.getLastPartition()).size() == 0)
 			return Double.NaN;
@@ -161,11 +162,11 @@ public class TransitionFeatures extends FeatureClass {
 	 *            the partition
 	 * @return an {@link Img} with all nodes of the partition
 	 */
-	private static Img<BitType> createPartitionImg(TransitionGraph tg,
+	private static <T extends RealType<T>> Img<BitType> createPartitionImg(TransitionGraph<T> tg,
 			String partition) {
-		Collection<Node> nodes = tg.getNodes(partition);
+		Collection<Node<T>> nodes = tg.getNodes(partition);
 		Rectangle2D rect = null;
-		for (Node node : nodes) {
+		for (Node<T> node : nodes) {
 			if (rect == null) {
 				rect = node.getImageRectangle();
 			} else {
@@ -179,7 +180,7 @@ public class TransitionFeatures extends FeatureClass {
 				new BitType());
 		RandomAccess<BitType> ra = img.randomAccess();
 		long[] pos = new long[2];
-		for (Node node : nodes) {
+		for (Node<T> node : nodes) {
 			Rectangle2D imgRect = node.getImageRectangle();
 			Cursor<BitType> cursor = node.getBitmask().getImgPlus()
 					.localizingCursor();
@@ -197,7 +198,7 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Euclidean Distance")
-	public static double euclDist(TransitionGraph tg) {
+	public static <T extends RealType<T>> double euclDist(TransitionGraph<T> tg) {
 		double dist = 0.0;
 		if (tg.getNodes(tg.getFirstPartition()).size() > 0
 				&& tg.getNodes(tg.getLastPartition()).size() > 0)
@@ -207,7 +208,7 @@ public class TransitionFeatures extends FeatureClass {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-		for (Edge e : tg.getEdges()) {
+		for (Edge<T> e : tg.getEdges()) {
 			System.out.println("EDGE!" + e);
 			dist += e.getStartNode().euclideanDistanceTo(e.getEndNode());
 		}

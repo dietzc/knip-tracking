@@ -18,6 +18,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedIntType;
 
 import org.knime.core.node.CanceledExecutionException;
@@ -44,16 +45,16 @@ import org.knime.network.core.core.feature.FeatureTypeFactory;
  * @author Stephan Sellien, University of Konstanz
  * 
  */
-public class TransitionGraph {
+public class TransitionGraph<T extends RealType<T>> {
 	private KPartiteGraph<PersistentObject, Partition> net;
 
 	private static int counter = 0;
 
-	private Map<String, List<Node>> nodes = new HashMap<String, List<Node>>();
+	private Map<String, List<Node<T>>> nodes = new HashMap<String, List<Node<T>>>();
 
 	private LinkedList<String> partitions = new LinkedList<String>();
 
-	private List<Edge> edges = new LinkedList<Edge>();
+	private List<Edge<T>> edges = new LinkedList<Edge<T>>();
 
 	public TransitionGraph() throws PersistenceException {
 		this.net = GraphFactory.createNet("transGraph" + (counter++));
@@ -70,17 +71,17 @@ public class TransitionGraph {
 				}
 			}
 
-			Map<String, Node> nodemap = new HashMap<String, Node>();
+			Map<String, Node<T>> nodemap = new HashMap<String, Node<T>>();
 			for (PersistentObject node : net.getNodes()) {
-				Node n = new Node(net, node);
+				Node<T> n = new Node<T>(net, node);
 				addNode(n);
 				nodemap.put(n.getID(), n);
 			}
 			for (PersistentObject edge : net.getEdges()) {
-				Node startNode = null;
-				Node endNode = null;
+				Node<T> startNode = null;
+				Node<T> endNode = null;
 				for (PersistentObject node : net.getIncidentNodes(edge)) {
-					Node n = nodemap.get(node.getId());
+					Node<T> n = nodemap.get(node.getId());
 					if (net.isDirected(edge)) {
 						if (net.isSource(edge, node))
 							startNode = n;
@@ -102,7 +103,7 @@ public class TransitionGraph {
 				if (startNode == null || endNode == null)
 					throw new IllegalArgumentException("Network " + net
 							+ " seems broken.");
-				Edge e = new Edge(net, edge, startNode, endNode);
+				Edge<T> e = new Edge<T>(net, edge, startNode, endNode);
 				addEdge(e);
 			}
 		} catch (PersistenceException e) {
@@ -123,41 +124,41 @@ public class TransitionGraph {
 	 * @throws PersistenceException
 	 *             from network.
 	 */
-	public TransitionGraph(TransitionGraph tg) throws PersistenceException {
+	public TransitionGraph(TransitionGraph<T> tg) throws PersistenceException {
 		this();
 		for (String partition : tg.partitions) {
 			addPartition(partition);
-			for (Node node : tg.getNodes(partition)) {
+			for (Node<T> node : tg.getNodes(partition)) {
 				node.createCopyIn(this);
 			}
 		}
-		for (Edge e : tg.edges) {
-			Node start = getCopiedNode(e.getStartNode());
-			Node end = getCopiedNode(e.getEndNode());
+		for (Edge<T> e : tg.edges) {
+			Node<T> start = getCopiedNode(e.getStartNode());
+			Node<T> end = getCopiedNode(e.getEndNode());
 			createEdge(start, end);
 		}
 	}
 
-	public TransitionGraph(List<String> partitions) throws PersistenceException {
+	public  TransitionGraph(List<String> partitions) throws PersistenceException {
 		this();
 		for (String partition : partitions) {
 			addPartition(partition);
 		}
 	}
 
-	public Node createNode(String id, boolean add) throws PersistenceException {
-		Node node = new Node(net, net.createNode(id));
+	public Node<T> createNode(String id, boolean add) throws PersistenceException {
+		Node<T> node = new Node<T>(net, net.createNode(id));
 		if (add)
 			addNode(node);
 		return node;
 	}
 
-	public Node createNode(String id) throws PersistenceException {
+	public Node<T> createNode(String id) throws PersistenceException {
 		return createNode(id, true);
 	}
 
-	public void addNode(Node node) {
-		List<Node> nodelist = nodes.get(node.getPartition());
+	public void addNode(Node<T> node) {
+		List<Node<T>> nodelist = nodes.get(node.getPartition());
 		if (nodelist == null) {
 			// no list found => new partition
 			addPartition(node.getPartition());
@@ -167,16 +168,16 @@ public class TransitionGraph {
 		// System.out.println("added " + node + " @ " + node.getPartition());
 	}
 
-	public Edge createEdge(Node start, Node end) throws PersistenceException {
+	public Edge<T> createEdge(Node<T> start, Node<T> end) throws PersistenceException {
 		String name = start.getID() + "_" + end.getID();
 		PersistentObject edge = net.createEdge(name,
 				start.getPersistentObject(), end.getPersistentObject());
-		Edge e = new Edge(net, edge, start, end);
+		Edge<T> e = new Edge<T>(net, edge, start, end);
 		addEdge(e);
 		return e;
 	}
 
-	private void addEdge(Edge e) {
+	private void addEdge(Edge<T> e) {
 		edges.add(e);
 		e.getStartNode().addEdge(e);
 		e.getEndNode().addEdge(e);
@@ -185,7 +186,7 @@ public class TransitionGraph {
 	public void addPartition(String partition) {
 		if (partitions.contains(partition))
 			return;
-		List<Node> nodelist = new LinkedList<Node>();
+		List<Node<T>> nodelist = new LinkedList<Node<T>>();
 		nodes.put(partition, nodelist);
 		partitions.add(partition);
 		Collections.sort(partitions, new PartitionComparatorString());
@@ -217,19 +218,19 @@ public class TransitionGraph {
 		return output.toString();
 	}
 
-	public double distanceTo(final TransitionGraph otherGraph) {
+	public double distanceTo(final  TransitionGraph<T> otherGraph) {
 		double minDist = Double.MAX_VALUE;
 		// use otherGraph as 'pattern' which will be permutated
-		List<Node[]> firstPartNodes = Permutation
+		List<Node<T>[]> firstPartNodes = Permutation
 				.getAllPermutations(otherGraph.nodes.get(otherGraph
 						.getFirstPartition()));
-		List<Node> tfpNodes = nodes.get(getFirstPartition());
-		for (Node[] permutation : firstPartNodes) {
+		List<Node<T>> tfpNodes = nodes.get(getFirstPartition());
+		for (Node<T>[] permutation : firstPartNodes) {
 			double dist = 0.0;
 			int index = 0;
 
-			for (Node node : tfpNodes) {
-				Node otherNode = permutation[index++];
+			for (Node<T> node : tfpNodes) {
+				Node<T> otherNode = permutation[index++];
 				dist += node.distanceTo(otherNode);
 			}
 
@@ -245,8 +246,8 @@ public class TransitionGraph {
 	 */
 	public void addDefaultEdges() {
 		if (nodes.get(getFirstPartition()).size() == 1) {
-			Node startNode = nodes.get(getFirstPartition()).get(0);
-			for (Node endNode : nodes.get(getLastPartition())) {
+			Node<T> startNode = nodes.get(getFirstPartition()).get(0);
+			for (Node<T> endNode : nodes.get(getLastPartition())) {
 				try {
 					this.createEdge(startNode, endNode);
 				} catch (PersistenceException e) {
@@ -272,7 +273,7 @@ public class TransitionGraph {
 
 	public double[] getDistanceVector() {
 		double[] featureDist = new double[getFeatureNames().length];
-		for (Node node : nodes.get(getFirstPartition())) {
+		for (Node<T> node : nodes.get(getFirstPartition())) {
 			double[] distVec = node.getDistanceVector();
 			for (int i = 0; i < featureDist.length; i++) {
 				featureDist[i] += distVec[i];
@@ -286,7 +287,7 @@ public class TransitionGraph {
 
 		Rectangle2D rect = null;
 		for (String partition : partitions) {
-			for (Node node : nodes.get(partition)) {
+			for (Node<T> node : nodes.get(partition)) {
 				if (rect == null) {
 					rect = node.getImageRectangle();
 				} else {
@@ -308,7 +309,7 @@ public class TransitionGraph {
 				.create(dim, new UnsignedIntType());
 		RandomAccess<UnsignedIntType> ra = img.randomAccess();
 
-		Map<Node, Point> positions = new HashMap<Node, Point>();
+		Map<Node<T>, Point> positions = new HashMap<Node<T>, Point>();
 
 		long color = 1000;
 		long[] rectDiff = new long[2];
@@ -316,7 +317,7 @@ public class TransitionGraph {
 		for (String partition : partitions) {
 
 			color = 0x1000 * (partitionIndex + 1);
-			for (Node node : nodes.get(partition)) {
+			for (Node<T> node : nodes.get(partition)) {
 				ImgPlusValue<?> bitmask = node.getBitmask();
 				Rectangle2D r = node.getImageRectangle();
 				rectDiff[0] = (long) (r.getMinX() - rect.getMinX())
@@ -371,9 +372,9 @@ public class TransitionGraph {
 		}
 		// ---borders
 
-		for (Edge edge : edges) {
-			Node start = edge.getStartNode();
-			Node end = edge.getEndNode();
+		for (Edge<T> edge : edges) {
+			Node<T> start = edge.getStartNode();
+			Node<T> end = edge.getEndNode();
 
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);
@@ -396,7 +397,7 @@ public class TransitionGraph {
 		StringBuilder sb = new StringBuilder();
 		for (String partition : partitions) {
 			sb.append("[");
-			for (Node node : nodes.get(partition)) {
+			for (Node<T> node : nodes.get(partition)) {
 				sb.append(node.getID()).append(" ");
 			}
 			sb.append("] ");
@@ -404,23 +405,23 @@ public class TransitionGraph {
 		return sb.toString();
 	}
 
-	public Collection<Node> getNodes(String partition) {
+	public Collection<Node<T>> getNodes(String partition) {
 		if (!partitions.contains(partition))
-			return new LinkedList<Node>();
+			return new LinkedList<Node<T>>();
 		return nodes.get(partition);
 	}
 
 	// might be moved
-	// public static Collection<TransitionGraph> createAllPossibleGraphs(
-	// TransitionGraph tg) {
-	// List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
+	// public static Collection<TransitionGraph<T>> createAllPossibleGraphs(
+	//  TransitionGraph<T> tg) {
+	// List<TransitionGraph<T>> graphs = new LinkedList<TransitionGraph<T>>();
 	// // assume 2 partitions only
 	// if (tg.partitions.size() != 2) {
 	// throw new IllegalStateException(
 	// "Transition graph should have 2 partitions.");
 	// }
 	// // #possibilities
-	// List<Node> nodes = new ArrayList<Node>();
+	// List<Node<T>> nodes = new ArrayList<Node<T>>();
 	// for (String partition : tg.partitions) {
 	// nodes.addAll(tg.nodes.get(partition));
 	// }
@@ -435,12 +436,12 @@ public class TransitionGraph {
 	//
 	// // generate transition graph with connections
 	// try {
-	// TransitionGraph copy = new TransitionGraph(tg);
-	// List<Node> firstPartNodes = new LinkedList<Node>();
-	// List<Node> secondPartNodes = new LinkedList<Node>();
+	//  TransitionGraph<T> copy = new  TransitionGraph<T>(tg);
+	// List<Node<T>> firstPartNodes = new LinkedList<Node<T>>();
+	// List<Node<T>> secondPartNodes = new LinkedList<Node<T>>();
 	// for (int bitIndex = 0; bitIndex < nodes.size(); bitIndex++) {
 	// if ((code & (1L << bitIndex)) != 0L) {
-	// Node node = nodes.get(bitIndex);
+	// Node<T> node = nodes.get(bitIndex);
 	// // search for correct object in copy
 	// node = copy.getCopiedNode(node);
 	// if (bitIndex < tg.nodes.get(tg.getFirstPartition())
@@ -450,8 +451,8 @@ public class TransitionGraph {
 	// secondPartNodes.add(node);
 	// }
 	// }
-	// for (Node fpn : firstPartNodes) {
-	// for (Node spn : secondPartNodes) {
+	// for (Node<T> fpn : firstPartNodes) {
+	// for (Node<T> spn : secondPartNodes) {
 	// copy.createEdge(fpn, spn);
 	// }
 	// }
@@ -477,17 +478,17 @@ public class TransitionGraph {
 	 *            a {@link TransitionGraph}
 	 * @return a {@link Collection} of {@link TransitionGraph}s
 	 */
-	public static Collection<TransitionGraph> createAllPossibleGraphs(
-			TransitionGraph tg) {
+	public static <T extends RealType<T>> Collection<TransitionGraph<T>> createAllPossibleGraphs(
+			 TransitionGraph<T> tg) {
 		if (tg.edges.size() == 0)
 			return createAllSubGraphs(tg);
 		else
 			return createLearningExamples(tg);
 	}
 
-	public static Collection<TransitionGraph> createLearningExamples(
-			TransitionGraph tg) {
-		List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
+	public static <T extends RealType<T>> Collection<TransitionGraph<T>> createLearningExamples(
+			 TransitionGraph<T> tg) {
+		List<TransitionGraph<T>> graphs = new LinkedList<TransitionGraph<T>>();
 		
 		
 		try {
@@ -499,7 +500,7 @@ public class TransitionGraph {
 				if(graph.getNoOfEdges() > 0)
 				{
 					//positive example
-					graphs.add(new TransitionGraph(graph));
+					graphs.add(new  TransitionGraph<T>(graph));
 				} else
 				{
 					//neg examples
@@ -529,29 +530,29 @@ public class TransitionGraph {
 	 *            the source
 	 * @return a {@link Collection} of {@link TransitionGraph}s
 	 */
-	public static Collection<TransitionGraph> createAllSubGraphs(
-			TransitionGraph tg) {
+	public static <T extends RealType<T>> Collection<TransitionGraph<T>> createAllSubGraphs(
+			 TransitionGraph<T> tg) {
 		if (tg.getPartitions().size() != 2)
 			throw new IllegalArgumentException(
 					"Transition graph must have 2 partitions.");
 
-		List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
+		List<TransitionGraph<T>> graphs = new LinkedList<TransitionGraph<T>>();
 
 		if (tg.getNodes(tg.getLastPartition()).size() > 1) {
 			// all 1:n combinations
-			for (Node firstnode : tg.getNodes(tg.getFirstPartition())) {
-				ArrayList<Node> nodes = new ArrayList<Node>(tg.getNodes(tg
+			for (Node<T> firstnode : tg.getNodes(tg.getFirstPartition())) {
+				ArrayList<Node<T>> nodes = new ArrayList<Node<T>>(tg.getNodes(tg
 						.getLastPartition()));
 				int n = nodes.size();
 				for (long i = 1; i < (1L << (n - 1)); i++) {
 					try {
-						TransitionGraph graph = new TransitionGraph(
+						 TransitionGraph<T> graph = new  TransitionGraph<T>(
 								tg.getPartitions());
-						Node firstnodeCopy = firstnode.createCopyIn(graph);
+						Node<T> firstnodeCopy = firstnode.createCopyIn(graph);
 						for (int j = 0; j < n; j++) {
 							if ((i >> j) % 2 == 1) {
-								Node node = nodes.get(j);
-								Node nodeCopy = node.createCopyIn(graph);
+								Node<T> node = nodes.get(j);
+								Node<T> nodeCopy = node.createCopyIn(graph);
 								graph.createEdge(firstnodeCopy, nodeCopy);
 							}
 						}
@@ -564,19 +565,19 @@ public class TransitionGraph {
 		}
 		if (tg.getNodes(tg.getFirstPartition()).size() > 1) {
 			// all m:1 combinations
-			for (Node secondnode : tg.getNodes(tg.getLastPartition())) {
-				ArrayList<Node> nodes = new ArrayList<Node>(tg.getNodes(tg
+			for (Node<T> secondnode : tg.getNodes(tg.getLastPartition())) {
+				ArrayList<Node<T>> nodes = new ArrayList<Node<T>>(tg.getNodes(tg
 						.getFirstPartition()));
 				int n = nodes.size();
 				for (long i = 1; i < (1L << (n - 1)); i++) {
 					try {
-						TransitionGraph graph = new TransitionGraph(
+						 TransitionGraph<T> graph = new  TransitionGraph<T>(
 								tg.getPartitions());
-						Node secondnodeCopy = secondnode.createCopyIn(graph);
+						Node<T> secondnodeCopy = secondnode.createCopyIn(graph);
 						for (int j = 0; j < n; j++) {
 							if ((i >> j) % 2 == 1) {
-								Node node = nodes.get(j);
-								Node nodeCopy = node.createCopyIn(graph);
+								Node<T> node = nodes.get(j);
+								Node<T> nodeCopy = node.createCopyIn(graph);
 								graph.createEdge(nodeCopy, secondnodeCopy);
 							}
 						}
@@ -590,18 +591,17 @@ public class TransitionGraph {
 
 		if (graphs.isEmpty()) {
 			try {
-				TransitionGraph copy = new TransitionGraph(tg);
+				 TransitionGraph<T> copy = new  TransitionGraph<T>(tg);
 				if (copy.getNodes(copy.getFirstPartition()).size() > 0
 						&& copy.getNodes(copy.getLastPartition()).size() > 0) {
-					Node start = copy.getNodes(copy.getFirstPartition())
+					Node<T> start = copy.getNodes(copy.getFirstPartition())
 							.iterator().next();
-					Node end = copy.getNodes(copy.getLastPartition())
+					Node<T> end = copy.getNodes(copy.getLastPartition())
 							.iterator().next();
 					copy.createEdge(start, end);
 				}
 				graphs.add(copy);
 			} catch (PersistenceException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			// System.out.println("#tg edges: " + tg.edges.size());
@@ -621,16 +621,16 @@ public class TransitionGraph {
 	 *            the original
 	 * @return the copy
 	 */
-	public Node getCopiedNode(Node node) {
+	public Node<T> getCopiedNode(Node<T> node) {
 		// must be in same partition as copy
-		for (Node n : getNodes(node.getPartition())) {
+		for (Node<T> n : getNodes(node.getPartition())) {
 			if (n.getID().equals(node.getID()))
 				return n;
 		}
 		throw new IllegalArgumentException(node + " not found in this copy.");
 	}
 
-	public List<Edge> getEdges() {
+	public List<Edge<T>> getEdges() {
 		return edges;
 	}
 
@@ -676,7 +676,7 @@ public class TransitionGraph {
 	public double getStartTime() {
 		int partIdx = 0;
 		for (String partition : partitions) {
-			for (Node node : nodes.get(partition)) {
+			for (Node<T> node : nodes.get(partition)) {
 				return nodes.get(getFirstPartition()).iterator().next()
 						.getTime()
 						- partIdx;
