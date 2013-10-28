@@ -52,10 +52,16 @@ public class IntensityFeatures<T extends RealType<T>> extends FeatureClass {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 			
 			@Override
-			public double[] calculate(PersistentObject po) {
+			public double calculate(PersistentObject po) {
 				Node<T> node = new Node<T>(tg.getNet(), po);
 				ImgPlusValue<T> img = node.getSegmentImage();
-				return createHistogram(img.getImgPlus(), 64);
+				double sum = 0.0;
+				long count = 0;
+				for(T val : img.getImgPlus()) {
+					sum += val.getRealDouble();
+					count++;
+				}
+				return sum / count;
 			}
 		});
 	}
@@ -63,13 +69,24 @@ public class IntensityFeatures<T extends RealType<T>> extends FeatureClass {
 	@Feature(name = "Intensity difference deviation")
 	public static <T extends RealType<T>> double diffDeviation(final TransitionGraph<T> tg) {
 		//diff inten devia
-		return traverseConnectedDiffMV(tg, new CalculationMV() {
+		return traverseConnectedDiffSV(tg, new CalculationSV() {
 			
 			@Override
-			public double[] calculate(PersistentObject po) {
+			public double calculate(PersistentObject po) {
 				Node<T> node = new Node<T>(tg.getNet(), po);
 				ImgPlusValue<T> img = node.getSegmentImage();
-				return createHistogram(img.getImgPlus(), 64);
+				double sum = 0.0;
+				long count = 0;
+				for(T val : img.getImgPlus()) {
+					sum += val.getRealDouble();
+					count++;
+				}
+				double mean = sum / count;
+				double deviation = 0.0;
+				for(T val : img.getImgPlus()) {
+					deviation += Math.abs(val.getRealDouble()-mean);
+				}
+				return deviation;
 			}
 		});
 	}
