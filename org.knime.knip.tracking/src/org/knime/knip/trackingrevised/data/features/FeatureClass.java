@@ -1,5 +1,7 @@
 package org.knime.knip.trackingrevised.data.features;
 
+import net.imglib2.type.numeric.RealType;
+
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
@@ -17,7 +19,7 @@ public abstract class FeatureClass {
 	 */
 	public abstract String getName();
 
-	protected static double traverseConnectedDiffSV(TransitionGraph tg,
+	protected static <T extends RealType<T>> double traverseConnectedDiffSV(TransitionGraph<T> tg,
 			CalculationSV calc) {
 		try {
 			Partition firstPartition = tg.getNet().getPartition(
@@ -64,7 +66,7 @@ public abstract class FeatureClass {
 		public abstract double calculate(PersistentObject po);
 	}
 
-	protected static double traverseConnectedDiffMV(TransitionGraph tg,
+	protected static <T extends RealType<T>> double traverseConnectedDiffMV(TransitionGraph<T> tg,
 			CalculationMV calc) {
 		try {
 			Partition firstPartition = tg.getNet().getPartition(

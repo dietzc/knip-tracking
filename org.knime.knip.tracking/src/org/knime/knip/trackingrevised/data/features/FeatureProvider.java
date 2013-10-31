@@ -4,6 +4,8 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.imglib2.type.numeric.RealType;
+
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 
 public class FeatureProvider {
@@ -26,7 +28,7 @@ public class FeatureProvider {
 		addFeatureClass(OtherFeatures.class);
 	}
 
-	public static double[] getFeatureVector(TransitionGraph tg) {
+	public static <T extends RealType<T>> double[] getFeatureVector(TransitionGraph<T> tg) {
 		double[] vec = new double[featureCount];
 
 		int index = 0;
@@ -79,7 +81,7 @@ public class FeatureProvider {
 		}
 	}
 
-	private static boolean isFeatureApplyable(TransitionGraph tg,
+	private static <T extends RealType<T>> boolean isFeatureApplyable(TransitionGraph<T> tg,
 			Method featureMethod) {
 		Feature feat = featureMethod.getAnnotation(Feature.class);
 		for (String neededFeature : feat.neededFeatures()) {

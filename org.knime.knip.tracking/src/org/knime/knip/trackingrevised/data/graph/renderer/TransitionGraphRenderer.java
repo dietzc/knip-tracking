@@ -151,7 +151,7 @@ public class TransitionGraphRenderer {
 						// rectDiff[d] + " vs " + dim[d] + " [" + d + "]"));
 					}
 					// ra.get().setInteger(cursor.get().getInteger() * color);
-					ra.get().setInteger(color);
+					//ra.get().setInteger(color);
 				}
 				color++;
 

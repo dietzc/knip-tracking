@@ -2,6 +2,7 @@ package org.knime.knip.trackingrevised.data.features;
 
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.RealType;
 
 import org.knime.knip.trackingrevised.data.graph.Node;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
@@ -15,12 +16,12 @@ public class PositionFeatures extends FeatureClass {
 	}
 	
 	@Feature(name = "diff. position")
-	public static double diffPos(final TransitionGraph tg) {
+	public static <T extends RealType<T>> double diffPos(final TransitionGraph<T> tg) {
 		return traverseConnectedDiffMV(tg, new CalculationMV() {
 			
 			@Override
 			public double[] calculate(PersistentObject po) {
-				Node node = new Node(tg.getNet(), po);
+				Node<T> node = new Node<T>(tg.getNet(), po);
 				double[] pos = new double[node.getPosition().numDimensions()];
 				node.getPosition().setPosition(pos);
 				return pos;
@@ -29,12 +30,12 @@ public class PositionFeatures extends FeatureClass {
 	}
 	
 	@Feature(name = "diff. size")
-	public static double diffSize(final TransitionGraph tg) {
+	public static <T extends RealType<T>> double diffSize(final TransitionGraph<T> tg) {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 			
 			@Override
 			public double calculate(PersistentObject po) {
-				Node node = new Node(tg.getNet(), po);
+				Node<T> node = new Node<T>(tg.getNet(), po);
 				ImgPlus<BitType> img = node.getBitmask().getImgPlus();
 				int count = 0;
 				for(BitType pixel : img)

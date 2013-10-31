@@ -1,5 +1,7 @@
 package org.knime.knip.trackingrevised.data.features;
 
+import java.util.Arrays;
+
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.RealType;
 
@@ -99,6 +101,7 @@ public class IntensityFeatures<T extends RealType<T>> extends FeatureClass {
 		for(T val : img) {
 			hist[(int)((val.getRealDouble()-min)*scale)]++;
 		}
+		System.out.println(Arrays.toString(hist));
 		return hist;
 	}
 }
