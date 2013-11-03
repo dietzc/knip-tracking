@@ -166,7 +166,11 @@ public class TransitionGraphConnectorComponent<T extends RealType<T>> extends
 	public void mouseReleased(MouseEvent e) {
 		System.out.println("to connect: " + startNode + " -> " + nearestNode);
 		try {
-			tg.createEdge(startNode, nearestNode);
+			if(startNode.getTime() >= nearestNode.getTime())
+				System.err.println(startNode + " must be before " + nearestNode);
+			else {
+				tg.createEdge(startNode, nearestNode);
+			}
 		} catch (PersistenceException e1) {
 			e1.printStackTrace();
 		}

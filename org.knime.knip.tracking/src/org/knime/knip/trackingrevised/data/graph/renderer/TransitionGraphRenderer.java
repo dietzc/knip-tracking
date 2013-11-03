@@ -30,6 +30,13 @@ public class TransitionGraphRenderer {
 	public static final int OVERVIEW_BORDER_SIZE = 50;
 	public static final int BORDER = 10;
 
+	/**
+	 * Renders a {@link TransitionGraph} to an {@link ImgPlus}.
+	 * @param base base graph (with surroundings)
+	 * @param baseImg original image as background
+	 * @param links {@link TransitionGraph} with edges to be drawn
+	 * @return a {@link ImgPlus}
+	 */
 	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> renderTransitionGraph(
 			TransitionGraph<T> base, ImgPlus<T> baseImg, TransitionGraph<T> links) {
 
@@ -59,10 +66,10 @@ public class TransitionGraphRenderer {
 			maxX = Math.min(baseImg.max(0), maxX + OVERVIEW_BORDER_SIZE);
 			maxY = Math.min(baseImg.max(1), maxY + OVERVIEW_BORDER_SIZE);
 
-			System.out.print("Old rect: " + rect + " ");
+//			System.out.print("Old rect: " + rect + " ");
 			rect = new Rectangle2D.Double(minX, minY, maxX - minX + 1, maxY
 					- minY + 1);
-			System.out.println(" new one: " + rect);
+//			System.out.println(" new one: " + rect);
 		}
 
 		int imgWidth = (int) rect.getWidth();
@@ -193,7 +200,7 @@ public class TransitionGraphRenderer {
 
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);
-
+			
 			BresenhamLine<T> bl = new BresenhamLine<T>(img, p1, p2);
 			while (bl.hasNext()) {
 				T pixel = bl.next();

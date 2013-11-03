@@ -165,6 +165,11 @@ public class TransitionGraph<T extends RealType<T>> {
 			nodelist = nodes.get(node.getPartition());
 		}
 		nodelist.add(node);
+		try {
+			net.assignNodeToPartition(node.getPersistentObject(), net.getPartition(node.getPartition()));
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		}
 		// System.out.println("added " + node + " @ " + node.getPartition());
 	}
 

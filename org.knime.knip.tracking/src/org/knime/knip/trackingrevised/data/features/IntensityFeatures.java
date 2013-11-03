@@ -101,7 +101,6 @@ public class IntensityFeatures<T extends RealType<T>> extends FeatureClass {
 		for(T val : img) {
 			hist[(int)((val.getRealDouble()-min)*scale)]++;
 		}
-		System.out.println(Arrays.toString(hist));
 		return hist;
 	}
 }

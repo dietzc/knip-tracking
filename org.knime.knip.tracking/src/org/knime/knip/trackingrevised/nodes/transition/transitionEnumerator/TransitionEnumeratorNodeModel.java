@@ -29,6 +29,8 @@ import org.knime.knip.base.node.NodeTools;
 import org.knime.knip.trackingrevised.data.features.FeatureProvider;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.knip.trackingrevised.data.graph.renderer.TransitionGraphRenderer;
+import org.knime.network.core.api.Partition;
+import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.knime.cell.GraphCellFactory;
 import org.knime.network.core.knime.cell.GraphValue;
 

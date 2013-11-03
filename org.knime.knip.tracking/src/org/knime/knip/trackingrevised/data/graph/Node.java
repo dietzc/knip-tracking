@@ -29,8 +29,8 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 
 	private final static String CENTROID_TIME = "Centroid Time";
 
-	private final List<Edge> outgoing = new LinkedList<Edge>();
-	private final List<Edge> incoming = new LinkedList<Edge>();
+	private final List<Edge<T>> outgoing = new LinkedList<Edge<T>>();
+	private final List<Edge<T>> incoming = new LinkedList<Edge<T>>();
 
 	public Node(KPartiteGraphView<PersistentObject, Partition> net,
 			PersistentObject pObj) {
@@ -52,7 +52,7 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 		return new RealPoint(x, y, z);
 	}
 
-	public void addEdge(Edge edge) {
+	public void addEdge(Edge<T> edge) {
 		if (edge.getStartNode() == this) {
 			outgoing.add(edge);
 		} else if (edge.getEndNode() == this) {
@@ -75,7 +75,7 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 	 *            the {@link TransitionGraph}
 	 * @return the copy of target.
 	 */
-	public Node<T> createCopyIn(TransitionGraph target) {
+	public Node<T> createCopyIn(TransitionGraph<T> target) {
 		try {
 			// create node in net, but do not add to graph yet
 			Node<T> node = target.createNode(this.getID(), false);
@@ -99,7 +99,7 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 		return null;
 	}
 
-	public List<Edge> getOutgoingEdges() {
+	public List<Edge<T>> getOutgoingEdges() {
 		return outgoing;
 	}
 
@@ -123,13 +123,13 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 		// 1. feature dist (euclidean)
 		double featureDist = featureDistance(otherNode);
 		// 2. permutate otherEdges for all combinations
-		List<Edge[]> otherEdgesPermutations = Permutation
+		List<Edge<T>[]> otherEdgesPermutations = Permutation
 				.getAllPermutations(otherNode.getOutgoingEdges());
-		for (Edge[] permutation : otherEdgesPermutations) {
+		for (Edge<T>[] permutation : otherEdgesPermutations) {
 			int index = 0;
 			double dist = 0.0;
-			for (Edge edge : getOutgoingEdges()) {
-				Edge otherEdge = permutation[index++];
+			for (Edge<T> edge : getOutgoingEdges()) {
+				Edge<T> otherEdge = permutation[index++];
 				dist += edge.distanceTo(otherEdge);
 			}
 			if (dist < minDist) {
@@ -216,7 +216,7 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 		for (int i = 0; i < vec.length; i++) {
 			String featName = it.next();
 			vec[i] = getDoubleFeature(featName);
-			for (Edge edge : outgoing) {
+			for (Edge<T> edge : outgoing) {
 				Node<T> endNode = edge.getEndNode();
 				vec[i] -= endNode.getDoubleFeature(featName);
 			}
@@ -240,7 +240,7 @@ public class Node<T extends RealType<T>> extends GraphObject implements Comparab
 		return getID().hashCode();
 	}
 
-	public List<Edge> getIncomingEdges() {
+	public List<Edge<T>> getIncomingEdges() {
 		return incoming;
 	}
 }
