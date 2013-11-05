@@ -6,12 +6,16 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import net.imglib2.type.numeric.RealType;
+
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.container.ColumnRearranger;
+import org.knime.core.data.container.DataContainer;
 import org.knime.core.data.container.SingleCellFactory;
+import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -31,7 +35,7 @@ import org.knime.network.core.knime.cell.GraphValue;
  * 
  * @author Stephan Sellien
  */
-public class TransitionScorerNodeModel extends NodeModel {
+public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel {
 
 	/**
 	 * Constructor for the node model.
@@ -48,40 +52,54 @@ public class TransitionScorerNodeModel extends NodeModel {
 			final ExecutionContext exec) throws Exception {
 
 		String currentTgId = "";
-		Set<TransitionGraph> graphs = new HashSet<TransitionGraph>();
+		Set<TransitionGraph<T>> graphs = new HashSet<TransitionGraph<T>>();
 		int tgIndex = NodeTools.firstCompatibleColumn(
 				inData[0].getDataTableSpec(), GraphValue.class);
+		
+		DataContainer cont = new DataContainer(createOutspec());
 
 		for (DataRow row : inData[0]) {
-			if (!row.getKey().getString().contains(";")) {
+			if (row.getKey().getString().contains(";")) {
 				System.out.println("tg: " + row.getKey());
 				String tgId = row.getKey().getString().split(";")[0];
 				if (tgId.equals(currentTgId)) {
-					graphs.add(new TransitionGraph(((GraphValue) row
+					graphs.add(new TransitionGraph<T>(((GraphValue) row
 							.getCell(tgIndex)).getView()));
 				} else {
 					if (graphs.size() > 0) {
-						TransitionGraph tg = merge(graphs);
+						TransitionGraph<T> tg = merge(graphs);
+						cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
 					}
 					currentTgId = tgId;
 					// start a new set
 					graphs.clear();
 				}
 				if (graphs.size() > 0) {
-					TransitionGraph tg = merge(graphs);
+					TransitionGraph<T> tg = merge(graphs);
+					cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
 				}
 
+			} else {
+				cont.addRowToTable(new DefaultRow(row.getKey(), new DataCell[0]));
 			}
 		}
+		
+		cont.close();
+		
+		return new BufferedDataTable[] { exec.createBufferedDataTable(cont.getTable(), exec)};
 
-		ColumnRearranger rearranger = createColumnRearranger(inData[0]
-				.getDataTableSpec());
-
-		return new BufferedDataTable[] { exec.createColumnRearrangeTable(
-				inData[0], rearranger, exec) };
+//		ColumnRearranger rearranger = createColumnRearranger(inData[0]
+//				.getDataTableSpec());
+//
+//		return new BufferedDataTable[] { exec.createColumnRearrangeTable(
+//				inData[0], rearranger, exec) };
 	}
 
-	private TransitionGraph merge(Set<TransitionGraph> graphs) {
+	private DataTableSpec createOutspec() {
+		return new DataTableSpec();
+	}
+
+	private TransitionGraph<T> merge(Set<TransitionGraph<T>> graphs) {
 		if (graphs.size() == 0)
 			return null;
 		else
@@ -91,7 +109,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 	private ColumnRearranger createColumnRearranger(DataTableSpec dataTableSpec) {
 		ColumnRearranger rearranger = new ColumnRearranger(dataTableSpec);
 		rearranger.append(new SingleCellFactory(new DataColumnSpecCreator(
-				"Score", DoubleCell.TYPE).createSpec()) {
+				"Transition score", DoubleCell.TYPE).createSpec()) {
 
 			@Override
 			public DataCell getCell(DataRow row) {

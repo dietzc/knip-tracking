@@ -248,8 +248,12 @@ public class TransitionGraph<T extends RealType<T>> {
 
 	/**
 	 * Create the assumed sure edges, e.g. if there is a 1 1 connection.
+	 *
 	 */
 	public void addDefaultEdges() {
+		//TODO: rethink
+		return;
+		/*
 		if (nodes.get(getFirstPartition()).size() == 1) {
 			Node<T> startNode = nodes.get(getFirstPartition()).get(0);
 			for (Node<T> endNode : nodes.get(getLastPartition())) {
@@ -260,6 +264,7 @@ public class TransitionGraph<T extends RealType<T>> {
 				}
 			}
 		}
+		*/
 	}
 
 	public String[] getFeatureNames() {
@@ -495,7 +500,7 @@ public class TransitionGraph<T extends RealType<T>> {
 			 TransitionGraph<T> tg) {
 		List<TransitionGraph<T>> graphs = new LinkedList<TransitionGraph<T>>();
 		
-		
+		System.out.println("we r doing da learning example stuff");
 		try {
 			WeakConnectedComponent wcc = new WeakConnectedComponent(new ExecutionMonitor(), tg.getNet());
 			wcc.start(new ExecutionMonitor());
@@ -549,7 +554,7 @@ public class TransitionGraph<T extends RealType<T>> {
 				ArrayList<Node<T>> nodes = new ArrayList<Node<T>>(tg.getNodes(tg
 						.getLastPartition()));
 				int n = nodes.size();
-				for (long i = 1; i < (1L << (n - 1)); i++) {
+				for (long i = 1; i < (1L << n); i++) {
 					try {
 						 TransitionGraph<T> graph = new  TransitionGraph<T>(
 								tg.getPartitions());
@@ -574,7 +579,11 @@ public class TransitionGraph<T extends RealType<T>> {
 				ArrayList<Node<T>> nodes = new ArrayList<Node<T>>(tg.getNodes(tg
 						.getFirstPartition()));
 				int n = nodes.size();
-				for (long i = 1; i < (1L << (n - 1)); i++) {
+				for (long i = 1; i < (1L << n); i++) {
+					if(Long.bitCount(i) <= 1) {
+						//ignore 1:1 connections as we already got them in the 1:n case
+						continue;
+					}
 					try {
 						 TransitionGraph<T> graph = new  TransitionGraph<T>(
 								tg.getPartitions());
@@ -681,7 +690,7 @@ public class TransitionGraph<T extends RealType<T>> {
 	public double getStartTime() {
 		int partIdx = 0;
 		for (String partition : partitions) {
-			for (Node<T> node : nodes.get(partition)) {
+			if (!nodes.get(partition).isEmpty()) {
 				return nodes.get(getFirstPartition()).iterator().next()
 						.getTime()
 						- partIdx;
