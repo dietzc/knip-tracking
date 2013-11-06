@@ -3,12 +3,12 @@ package org.knime.knip.trackingrevised.nodes.trackletcombiner.hypothesis;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.imglib2.RealPoint;
+import net.imglib2.RealLocalizable;
 
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.core.node.ExecutionContext;
 import org.knime.knip.base.data.IntervalValue;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
@@ -105,8 +105,8 @@ public abstract class Hypothesis {
 			PersistentObject node, IntervalValue intervalValue)
 			throws Exception {
 		double prop = TrackingConstants.ETA;
-		int dt = (int) new Node(net, node).getTime();
-		RealPoint position = new Node(net, node).getPosition();
+		int dt = (int) new TrackedNode(net, node).frame();
+		RealLocalizable position = new TrackedNode(net, node);
 		if (dt <= deltaT) {
 			prop = Math.max(prop, Math.exp(-dt / lamda1));
 		}
@@ -139,12 +139,12 @@ public abstract class Hypothesis {
 
 		int maxTime = (int) intervalValue.getMaximum()[timeIdx];
 
-		int dt = maxTime - (int) new Node(net, node).getTime();
+		int dt = maxTime - (int) new TrackedNode(net, node).frame();
 		if (dt <= deltaT) {
 			prop = Math.max(prop, Math.exp(-dt / lamda1));
 		}
 		double ds = 0;
-		RealPoint position = new Node(net, node).getPosition();
+		RealLocalizable position = new TrackedNode(net, node);
 		for (int d = 0; d < position.numDimensions(); d++) {
 			double minDist = Math.min(
 					position.getDoublePosition(d)

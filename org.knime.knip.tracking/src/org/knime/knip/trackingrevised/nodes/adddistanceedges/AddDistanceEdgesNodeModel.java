@@ -102,7 +102,7 @@ public class AddDistanceEdgesNodeModel extends KPartiteGraphNodeModel {
 			for (PersistentObject node : net.getNodes(partition)) {
 				Partition nextPartition = partitions.get(p + 1);
 
-				org.knime.knip.trackingrevised.data.graph.Node myNode = new org.knime.knip.trackingrevised.data.graph.Node(
+				org.knime.knip.trackingrevised.data.graph.TrackedNode myNode = new org.knime.knip.trackingrevised.data.graph.TrackedNode(
 						net, node);
 				for (PersistentObject nextNode : net.getNodes(nextPartition)) {
 					double dist = 0;
@@ -118,7 +118,7 @@ public class AddDistanceEdgesNodeModel extends KPartiteGraphNodeModel {
 
 					dist = jep.getValue();
 
-					org.knime.knip.trackingrevised.data.graph.Node myNextNode = new org.knime.knip.trackingrevised.data.graph.Node(
+					org.knime.knip.trackingrevised.data.graph.TrackedNode myNextNode = new org.knime.knip.trackingrevised.data.graph.TrackedNode(
 							net, nextNode);
 
 					double euclidean = myNode.euclideanDistanceTo(myNextNode);

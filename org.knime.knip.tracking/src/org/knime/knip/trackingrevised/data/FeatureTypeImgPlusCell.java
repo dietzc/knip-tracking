@@ -32,6 +32,7 @@ public class FeatureTypeImgPlusCell<T extends RealType<T>> extends
 	 * 
 	 * @return the only instance
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static FeatureTypeImgPlusCell<? extends RealType<?>> getInstance() {
 		if (instance == null) {
 			synchronized (FeatureTypeImgPlusCell.class) {
@@ -65,6 +66,7 @@ public class FeatureTypeImgPlusCell<T extends RealType<T>> extends
 	/**
 	 * {@inheritDoc}
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public ImgPlus<T> convertValue(Object value) throws InvalidFeatureException {
 		if (value == null) {
@@ -164,6 +166,7 @@ public class FeatureTypeImgPlusCell<T extends RealType<T>> extends
 						+ getClass().toString()));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected ImgPlus<T> convertCellInternal(DataCell cell)
 			throws InvalidFeatureException {

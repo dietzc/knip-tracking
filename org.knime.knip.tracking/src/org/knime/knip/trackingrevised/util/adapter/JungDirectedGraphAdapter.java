@@ -1,6 +1,6 @@
 package org.knime.knip.trackingrevised.util.adapter;
 
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
@@ -24,8 +24,8 @@ public class JungDirectedGraphAdapter extends JungAdapter implements
 	@Override
 	public boolean isNeighbor(PersistentObject v1, PersistentObject v2) {
 		if (super.isNeighbor(v1, v2)) {
-			return new Node(getNet(), v1).getTime() < new Node(getNet(), v2)
-					.getTime();
+			return new TrackedNode(getNet(), v1).frame() < new TrackedNode(getNet(), v2)
+					.frame();
 		}
 		return false;
 	}

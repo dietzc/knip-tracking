@@ -30,12 +30,6 @@
 <node
       category-path="/community/knip/trackingrevised"
       expert-flag="false"
-      factory-class="org.knime.knip.trackingrevised.trackmate.LAPMergeSplitterFactory"
-      id="org.knime.knip.trackingrevised.trackmate.LAPMergeSplitterFactory">
-</node>
-<node
-      category-path="/community/knip/trackingrevised"
-      expert-flag="false"
       factory-class="org.knime.knip.trackingrevised.trackmate.LAPTrackletCreatorNodeFactory"
       id="org.knime.knip.trackingrevised.trackmate.LAPTrackletCreatorNodeFactory">
 </node>

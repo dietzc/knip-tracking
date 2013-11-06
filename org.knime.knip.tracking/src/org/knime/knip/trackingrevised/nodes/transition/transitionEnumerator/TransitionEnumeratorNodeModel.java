@@ -29,8 +29,6 @@ import org.knime.knip.base.node.NodeTools;
 import org.knime.knip.trackingrevised.data.features.FeatureProvider;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.knip.trackingrevised.data.graph.renderer.TransitionGraphRenderer;
-import org.knime.network.core.api.Partition;
-import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.knime.cell.GraphCellFactory;
 import org.knime.network.core.knime.cell.GraphValue;
 
@@ -69,14 +67,15 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 					"Input table #2 must contain the original image.");
 		}
 
+		@SuppressWarnings("unchecked")
 		ImgPlus<T> baseImg = ((ImgPlusValue<T>) inData[1].iterator().next()
 				.getCell(0)).getImgPlus();
 
 		for (DataRow row : inData[0]) {
-			TransitionGraph<T> tg = new TransitionGraph<T>(
+			TransitionGraph tg = new TransitionGraph(
 					((GraphValue) row.getCell(graphColIdx)).getView());
 			int variantCounter = 0;
-			for (TransitionGraph<T> tgVariant : TransitionGraph
+			for (TransitionGraph tgVariant : TransitionGraph
 					.createAllPossibleGraphs(tg)) {
 				DataCell[] cells = new DataCell[cont.getTableSpec()
 						.getNumColumns()];

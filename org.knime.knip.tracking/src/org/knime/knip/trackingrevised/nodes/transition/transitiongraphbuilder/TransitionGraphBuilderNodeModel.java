@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import net.imglib2.RealPoint;
 import net.imglib2.collection.KDTree;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -33,7 +32,7 @@ import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.trackingrevised.data.features.FeatureProvider;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.knip.trackingrevised.data.graph.renderer.TransitionGraphRenderer;
 import org.knime.knip.trackingrevised.util.PartitionComparator;
@@ -114,16 +113,16 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 		return new DataTableSpec(cols.toArray(new DataColumnSpec[cols.size()]));
 	}
 
-	private void createTransitionGraph(KDTree<Node> tree,
-			KDTree<Node> nextTree, TransitionGraph graph, Node node,
-			double radius, Set<Node> usedSegments) {
+	private void createTransitionGraph(KDTree<TrackedNode> tree,
+			KDTree<TrackedNode> nextTree, TransitionGraph graph, TrackedNode node,
+			double radius, Set<TrackedNode> usedSegments) {
 		// graph.addNode(node);
 		node.createCopyIn(graph);
-		RadiusNeighborSearchOnKDTree<Node> rns = new RadiusNeighborSearchOnKDTree<Node>(
+		RadiusNeighborSearchOnKDTree<TrackedNode> rns = new RadiusNeighborSearchOnKDTree<TrackedNode>(
 				nextTree);
-		rns.search(node.getPosition(), radius, false);
+		rns.search(node, radius, false);
 		for (int obj = 0; obj < rns.numNeighbors(); obj++) {
-			Node nextNode = rns.getSampler(obj).get();
+			TrackedNode nextNode = rns.getSampler(obj).get();
 			if (usedSegments.contains(nextNode))
 				continue;
 			usedSegments.add(nextNode);
@@ -132,9 +131,9 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 		}
 	}
 
-	private void addAll(Queue<Node> queue, KDTree<Node>.KDTreeCursor cursor) {
+	private void addAll(Queue<TrackedNode> queue, KDTree<TrackedNode>.KDTreeCursor cursor) {
 		while (cursor.hasNext()) {
-			Node node = cursor.next();
+			TrackedNode node = cursor.next();
 			queue.add(node);
 		}
 	}
@@ -173,18 +172,18 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 		ImgPlus<T> baseImg = ((ImgPlusValue<T>) table.iterator().next()
 				.getCell(0)).getImgPlus();
 
-		List<KDTree<Node>> trees = new LinkedList<KDTree<Node>>();
+		List<KDTree<TrackedNode>> trees = new LinkedList<KDTree<TrackedNode>>();
 		// build up kdtrees
 		for (Partition partition : partitions) {
 			exec.checkCanceled();
-			List<Node> objects = new LinkedList<Node>();
-			List<RealPoint> locations = new LinkedList<RealPoint>();
+			List<TrackedNode> objects = new LinkedList<TrackedNode>();
+			List<TrackedNode> locations = new LinkedList<TrackedNode>();
 			for (PersistentObject pobj : net.getNodes(partition)) {
-				Node node = new Node(net, pobj);
+				TrackedNode node = new TrackedNode(net, pobj);
 				objects.add(node);
-				locations.add(node.getPosition());
+				locations.add(node);
 			}
-			trees.add(new KDTree<Node>(objects, locations));
+			trees.add(new KDTree<TrackedNode>(objects, locations));
 		}
 
 		// build up transition graphs in respect to distance
@@ -194,23 +193,23 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 					+ (trees.size() + 1));
 			// System.out.println("Partition #" + (p+1));
 
-			KDTree<Node> tree = trees.get(p);
-			KDTree<Node> nextTree = trees.get(p + 1);
+			KDTree<TrackedNode> tree = trees.get(p);
+			KDTree<TrackedNode> nextTree = trees.get(p + 1);
 
-			List<Node> unusedNodes = new LinkedList<Node>();
-			for (Node node : nextTree) {
+			List<TrackedNode> unusedNodes = new LinkedList<TrackedNode>();
+			for (TrackedNode node : nextTree) {
 				unusedNodes.add(node);
 			}
 
-			Set<Node> usedSegments = new HashSet<Node>();
+			Set<TrackedNode> usedSegments = new HashSet<TrackedNode>();
 
-			KDTree<Node>.KDTreeCursor cursor = tree.localizingCursor();
+			KDTree<TrackedNode>.KDTreeCursor cursor = tree.localizingCursor();
 			int count = 0;
-			Queue<Node> queue = new LinkedList<Node>();
+			Queue<TrackedNode> queue = new LinkedList<TrackedNode>();
 			addAll(queue, cursor);
 			while (!queue.isEmpty()) {
 				exec.checkCanceled();
-				Node node = queue.poll();
+				TrackedNode node = queue.poll();
 				if (node.getID().equals("113"))
 					System.out.println("----113----");
 				if (usedSegments.contains(node))
@@ -268,7 +267,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 
 			// nodes in second partition without possible match in first, create
 			// transition
-			for (Node node : unusedNodes) {
+			for (TrackedNode node : unusedNodes) {
 				exec.checkCanceled();
 				TransitionGraph tg = new TransitionGraph();
 				// add both partitions - needed for 0->1 and 1 -> 0 graphs
@@ -278,7 +277,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 				node.createCopyIn(tg);
 
 				// look for other nodes in distance
-				for (Node node2 : unusedNodes) {
+				for (TrackedNode node2 : unusedNodes) {
 					if (node2.equals(node))
 						continue;
 					if (node.distanceTo(node2) < m_distance.getDoubleValue()) {

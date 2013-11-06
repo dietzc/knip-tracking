@@ -52,10 +52,10 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 			final ExecutionContext exec) throws Exception {
 
 		String currentTgId = "";
-		Set<TransitionGraph<T>> graphs = new HashSet<TransitionGraph<T>>();
+		Set<TransitionGraph> graphs = new HashSet<TransitionGraph>();
 		int tgIndex = NodeTools.firstCompatibleColumn(
 				inData[0].getDataTableSpec(), GraphValue.class);
-		
+
 		DataContainer cont = new DataContainer(createOutspec());
 
 		for (DataRow row : inData[0]) {
@@ -63,11 +63,12 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 				System.out.println("tg: " + row.getKey());
 				String tgId = row.getKey().getString().split(";")[0];
 				if (tgId.equals(currentTgId)) {
-					graphs.add(new TransitionGraph<T>(((GraphValue) row
+					graphs.add(new TransitionGraph(((GraphValue) row
 							.getCell(tgIndex)).getView()));
 				} else {
 					if (graphs.size() > 0) {
-						TransitionGraph<T> tg = merge(graphs);
+						// TODO unused
+						TransitionGraph tg = merge(graphs);
 						cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
 					}
 					currentTgId = tgId;
@@ -75,7 +76,8 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 					graphs.clear();
 				}
 				if (graphs.size() > 0) {
-					TransitionGraph<T> tg = merge(graphs);
+					// TODO unused
+					TransitionGraph tg = merge(graphs);
 					cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
 				}
 
@@ -83,23 +85,24 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 				cont.addRowToTable(new DefaultRow(row.getKey(), new DataCell[0]));
 			}
 		}
-		
-		cont.close();
-		
-		return new BufferedDataTable[] { exec.createBufferedDataTable(cont.getTable(), exec)};
 
-//		ColumnRearranger rearranger = createColumnRearranger(inData[0]
-//				.getDataTableSpec());
-//
-//		return new BufferedDataTable[] { exec.createColumnRearrangeTable(
-//				inData[0], rearranger, exec) };
+		cont.close();
+
+		return new BufferedDataTable[] { exec.createBufferedDataTable(
+				cont.getTable(), exec) };
+
+		// ColumnRearranger rearranger = createColumnRearranger(inData[0]
+		// .getDataTableSpec());
+		//
+		// return new BufferedDataTable[] { exec.createColumnRearrangeTable(
+		// inData[0], rearranger, exec) };
 	}
 
 	private DataTableSpec createOutspec() {
 		return new DataTableSpec();
 	}
 
-	private TransitionGraph<T> merge(Set<TransitionGraph<T>> graphs) {
+	private TransitionGraph merge(Set<TransitionGraph> graphs) {
 		if (graphs.size() == 0)
 			return null;
 		else

@@ -3,11 +3,9 @@ package org.knime.knip.trackingrevised.nodes.trackletcombiner.hypothesis;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.imglib2.RealPoint;
-
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.knip.base.data.IntervalValue;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
@@ -40,7 +38,7 @@ public class TerminationHypothesis extends Hypothesis {
 			long[] min = intervalValue.getMinimum();
 			long[] max = intervalValue.getMaximum();
 
-			RealPoint position = new Node(net, node).getPosition();
+			TrackedNode position = new TrackedNode(net, node);
 
 			for (int d = 0; d < position.numDimensions(); d++) {
 				if (Math.abs(position.getDoublePosition(d) - min[d]) <= deltaS) {

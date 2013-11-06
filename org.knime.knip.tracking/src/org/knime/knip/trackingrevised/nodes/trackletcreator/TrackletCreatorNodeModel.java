@@ -10,7 +10,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import net.imglib2.RealPoint;
 import net.imglib2.collection.KDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
@@ -21,7 +20,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.util.PartitionComparator;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
 import org.knime.network.core.api.KPartiteGraph;
@@ -84,7 +83,7 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 		// target -> source for lookup
 		// LinkedHashMap to persist temporal context.
 		Map<PersistentObject, List<EdgeCandidate>> edgeCandidates = new LinkedHashMap<PersistentObject, List<EdgeCandidate>>();
-		KDTree<Node> tree = null, nextTree = null;
+		KDTree<TrackedNode> tree = null, nextTree = null;
 		for (int p = 0; p < partitions.size() - 1; p++) {
 			Partition partition = partitions.get(p);
 			Partition nextPartition = partitions.get(p + 1);
@@ -122,8 +121,8 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 					// splits / merges aren't undetectable after
 					// only is a candidate if nothing is in 2*euclidean_dist
 					// radius
-					Node targetNode = new Node(net, target);
-					Node sourceNode = new Node(net, source);
+					TrackedNode targetNode = new TrackedNode(net, target);
+					TrackedNode sourceNode = new TrackedNode(net, source);
 
 					// if(sourceNode.getID().matches("670")) {
 					// System.out.println(edge + " " + dist);
@@ -137,9 +136,9 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 							safetyRadius.getDoubleValue());
 
 					// around target in partition -> merges
-					RadiusNeighborSearchOnKDTree<Node> search = new RadiusNeighborSearchOnKDTree<Node>(
+					RadiusNeighborSearchOnKDTree<TrackedNode> search = new RadiusNeighborSearchOnKDTree<TrackedNode>(
 							tree);
-					search.search(targetNode.getPosition(), searchRadius, false);
+					search.search(targetNode, searchRadius, false);
 					int noTargetNeighbors = search.numNeighbors();
 					boolean found = false;
 					for (int i = 0; i < search.numNeighbors(); i++) {
@@ -154,8 +153,8 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 								+ target);
 					}
 					// around source in nextpartition -> splits
-					search = new RadiusNeighborSearchOnKDTree<Node>(nextTree);
-					search.search(sourceNode.getPosition(), searchRadius, false);
+					search = new RadiusNeighborSearchOnKDTree<TrackedNode>(nextTree);
+					search.search(sourceNode, searchRadius, false);
 					int noSourceNeighbors = search.numNeighbors();
 
 					found = false;
@@ -280,17 +279,17 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 		safetyRadius.loadSettingsFrom(settings);
 	}
 
-	private KDTree<Node> createKDTree(
+	private KDTree<TrackedNode> createKDTree(
 			KPartiteGraph<PersistentObject, Partition> net, Partition partition)
 			throws PersistenceException {
-		List<Node> objects = new LinkedList<Node>();
-		List<RealPoint> positions = new LinkedList<RealPoint>();
+		List<TrackedNode> objects = new LinkedList<TrackedNode>();
+		List<TrackedNode> positions = new LinkedList<TrackedNode>();
 		for (PersistentObject n : net.getNodes(partition)) {
-			Node node = new Node(net, n);
+			TrackedNode node = new TrackedNode(net, n);
 			objects.add(node);
-			positions.add(node.getPosition());
+			positions.add(node);
 		}
-		return new KDTree<Node>(objects, positions);
+		return new KDTree<TrackedNode>(objects, positions);
 	}
 }
 

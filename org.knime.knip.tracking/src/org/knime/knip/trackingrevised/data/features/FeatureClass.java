@@ -1,7 +1,5 @@
 package org.knime.knip.trackingrevised.data.features;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
@@ -19,7 +17,7 @@ public abstract class FeatureClass {
 	 */
 	public abstract String getName();
 
-	protected static <T extends RealType<T>> double traverseConnectedDiffSV(TransitionGraph<T> tg,
+	protected static double traverseConnectedDiffSV(TransitionGraph tg,
 			CalculationSV calc) {
 		try {
 			Partition firstPartition = tg.getNet().getPartition(
@@ -66,7 +64,7 @@ public abstract class FeatureClass {
 		public abstract double calculate(PersistentObject po);
 	}
 
-	protected static <T extends RealType<T>> double traverseConnectedDiffMV(TransitionGraph<T> tg,
+	protected static double traverseConnectedDiffMV(TransitionGraph tg,
 			CalculationMV calc) {
 		try {
 			Partition firstPartition = tg.getNet().getPartition(
@@ -130,11 +128,11 @@ public abstract class FeatureClass {
 		public double diff(double[] fpsum, double[] lpsum) {
 			// euclidean
 			double dist = 0.0;
-			if(fpsum == null && lpsum == null)
+			if (fpsum == null && lpsum == null)
 				return 0.0;
-			if(fpsum == null) 
+			if (fpsum == null)
 				fpsum = new double[lpsum.length];
-			if(lpsum == null)
+			if (lpsum == null)
 				lpsum = new double[fpsum.length];
 			for (int i = 0; i < fpsum.length; i++) {
 				dist += (fpsum[i] * fpsum[i]) - (lpsum[i] * lpsum[i]);

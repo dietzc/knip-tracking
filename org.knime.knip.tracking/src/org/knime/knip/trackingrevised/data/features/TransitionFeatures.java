@@ -13,7 +13,7 @@ import net.imglib2.type.numeric.RealType;
 
 import org.knime.knip.core.data.algebra.RealVector;
 import org.knime.knip.trackingrevised.data.graph.Edge;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 import org.knime.network.core.core.exception.PersistenceException;
 
@@ -25,36 +25,35 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Number difference")
-	public static <T extends RealType<T>> double numDiff(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double numDiff(TransitionGraph tg) {
 		return tg.getNodes(tg.getLastPartition()).size()
 				- tg.getNodes(tg.getFirstPartition()).size();
 	}
 
 	@Feature(name = "First partition count")
-	public static <T extends RealType<T>> double fpc(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double fpc(TransitionGraph tg) {
 		return tg.getNodes(tg.getFirstPartition()).size();
 	}
 
 	@Feature(name = "Last partition count")
-	public static <T extends RealType<T>> double lpc(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double lpc(TransitionGraph tg) {
 		return tg.getNodes(tg.getLastPartition()).size();
 	}
 
 	@Feature(name = "Division Angle Pattern")
-	public static <T extends RealType<T>> double divisionAnglePattern(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double divisionAnglePattern(
+			TransitionGraph tg) {
 		double angle = Double.NaN;
-		for (Node<T> node : tg.getNodes(tg.getFirstPartition())) {
+		for (TrackedNode node : tg.getNodes(tg.getFirstPartition())) {
 			// System.out.println(node + " " + node.getOutgoingEdges().size() +
 			// " " + node.getOutgoingEdges());
 			if (node.getOutgoingEdges().size() == 2) {
-				double[] tmp = new double[node.getPosition().numDimensions()];
-				node.getPosition().localize(tmp);
+				double[] tmp = new double[node.numDimensions()];
+				node.localize(tmp);
 				RealVector p1 = new RealVector(tmp);
-				node.getOutgoingEdges().get(0).getEndNode().getPosition()
-						.localize(tmp);
+				node.getOutgoingEdges().get(0).getEndNode().localize(tmp);
 				RealVector p2 = new RealVector(tmp);
-				node.getOutgoingEdges().get(1).getEndNode().getPosition()
-						.localize(tmp);
+				node.getOutgoingEdges().get(1).getEndNode().localize(tmp);
 				RealVector p3 = new RealVector(tmp);
 
 				RealVector u = p2.subtract(p1);
@@ -76,18 +75,17 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Merge Angle Pattern")
-	public static <T extends RealType<T>> double mergeAnglePattern(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double mergeAnglePattern(
+			TransitionGraph tg) {
 		double angle = Double.NaN;
-		for (Node<T> node : tg.getNodes(tg.getLastPartition())) {
+		for (TrackedNode node : tg.getNodes(tg.getLastPartition())) {
 			if (node.getIncomingEdges().size() == 2) {
-				double[] tmp = new double[node.getPosition().numDimensions()];
-				node.getPosition().localize(tmp);
+				double[] tmp = new double[node.numDimensions()];
+				node.localize(tmp);
 				RealVector p1 = new RealVector(tmp);
-				node.getIncomingEdges().get(0).getStartNode().getPosition()
-						.localize(tmp);
+				node.getIncomingEdges().get(0).getStartNode().localize(tmp);
 				RealVector p2 = new RealVector(tmp);
-				node.getIncomingEdges().get(1).getStartNode().getPosition()
-						.localize(tmp);
+				node.getIncomingEdges().get(1).getStartNode().localize(tmp);
 				RealVector p3 = new RealVector(tmp);
 
 				RealVector u = p2.subtract(p1);
@@ -116,7 +114,7 @@ public class TransitionFeatures extends FeatureClass {
 	 * @return the shape compactness value
 	 */
 	@Feature(name = "Shape Compactness")
-	public static <T extends RealType<T>> double shapeCompactness(TransitionGraph<T> tg) {
+	public static double shapeCompactness(TransitionGraph tg) {
 		if (tg.getNodes(tg.getFirstPartition()).size() == 0
 				|| tg.getNodes(tg.getLastPartition()).size() == 0)
 			return Double.NaN;
@@ -162,11 +160,11 @@ public class TransitionFeatures extends FeatureClass {
 	 *            the partition
 	 * @return an {@link Img} with all nodes of the partition
 	 */
-	private static <T extends RealType<T>> Img<BitType> createPartitionImg(TransitionGraph<T> tg,
-			String partition) {
-		Collection<Node<T>> nodes = tg.getNodes(partition);
+	private static <T extends RealType<T>> Img<BitType> createPartitionImg(
+			TransitionGraph tg, String partition) {
+		Collection<TrackedNode> nodes = tg.getNodes(partition);
 		Rectangle2D rect = null;
-		for (Node<T> node : nodes) {
+		for (TrackedNode node : nodes) {
 			if (rect == null) {
 				rect = node.getImageRectangle();
 			} else {
@@ -180,7 +178,7 @@ public class TransitionFeatures extends FeatureClass {
 				new BitType());
 		RandomAccess<BitType> ra = img.randomAccess();
 		long[] pos = new long[2];
-		for (Node<T> node : nodes) {
+		for (TrackedNode node : nodes) {
 			Rectangle2D imgRect = node.getImageRectangle();
 			Cursor<BitType> cursor = node.getBitmask().getImgPlus()
 					.localizingCursor();
@@ -198,7 +196,7 @@ public class TransitionFeatures extends FeatureClass {
 	}
 
 	@Feature(name = "Euclidean Distance")
-	public static <T extends RealType<T>> double euclDist(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double euclDist(TransitionGraph tg) {
 		double dist = 0.0;
 		if (tg.getNodes(tg.getFirstPartition()).size() > 0
 				&& tg.getNodes(tg.getLastPartition()).size() > 0)
@@ -208,7 +206,7 @@ public class TransitionFeatures extends FeatureClass {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-		for (Edge<T> e : tg.getEdges()) {
+		for (Edge e : tg.getEdges()) {
 			System.out.println("EDGE!" + e);
 			dist += e.getStartNode().euclideanDistanceTo(e.getEndNode());
 		}

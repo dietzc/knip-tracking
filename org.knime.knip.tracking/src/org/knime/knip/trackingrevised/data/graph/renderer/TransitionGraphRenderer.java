@@ -7,7 +7,6 @@ import java.util.Map;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
-import net.imglib2.RealPoint;
 import net.imglib2.algorithm.region.BresenhamLine;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -22,7 +21,7 @@ import net.imglib2.view.Views;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.core.ops.img.ImgPlusNormalize;
 import org.knime.knip.trackingrevised.data.graph.Edge;
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 
 public class TransitionGraphRenderer {
@@ -38,11 +37,11 @@ public class TransitionGraphRenderer {
 	 * @return a {@link ImgPlus}
 	 */
 	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> renderTransitionGraph(
-			TransitionGraph<T> base, ImgPlus<T> baseImg, TransitionGraph<T> links) {
+			TransitionGraph base, ImgPlus<T> baseImg, TransitionGraph links) {
 
 		Rectangle2D rect = null;
 		for (String partition : base.getPartitions()) {
-			for (Node<T> node : base.getNodes(partition)) {
+			for (TrackedNode node : base.getNodes(partition)) {
 				if (rect == null) {
 					rect = node.getImageRectangle();
 				} else {
@@ -87,11 +86,11 @@ public class TransitionGraphRenderer {
 			int timeindex = -1;
 			if (!base.getNodes(base.getFirstPartition()).isEmpty()) {
 				timeindex = (int) base.getNodes(base.getFirstPartition())
-						.iterator().next().getTime();
+						.iterator().next().frame();
 			}
 			if (!base.getNodes(base.getLastPartition()).isEmpty()) {
 				timeindex = (int) base.getNodes(base.getLastPartition())
-						.iterator().next().getTime() - 1;
+						.iterator().next().frame() - 1;
 			}
 			if (timeindex == -1) {
 				throw new IllegalArgumentException(
@@ -130,14 +129,14 @@ public class TransitionGraphRenderer {
 			}
 		}
 
-		Map<Node<T>, Point> positions = new HashMap<Node<T>, Point>();
+		Map<TrackedNode, Point> positions = new HashMap<TrackedNode, Point>();
 
 		long color = 10;
 		long[] rectDiff = new long[2];
 		int partitionIndex = 0;
 		for (String partition : links.getPartitions()) {
 
-			for (Node<T> node : links.getNodes(partition)) {
+			for (TrackedNode node : links.getNodes(partition)) {
 				ImgPlusValue<?> bitmask = node.getBitmask();
 				Rectangle2D r = node.getImageRectangle();
 				rectDiff[0] = (long) (r.getMinX() - rect.getMinX())
@@ -164,12 +163,11 @@ public class TransitionGraphRenderer {
 
 				// remember position for drawing edges later on
 				Point position = new Point(dim.length);
-				RealPoint p = node.getPosition();
 				position.setPosition(
-						(int) (p.getDoublePosition(0) - rect.getMinX() + (imgWidth + BORDER)
+						(int) (node.getDoublePosition(0) - rect.getMinX() + (imgWidth + BORDER)
 								* partitionIndex), 0);
 				position.setPosition(
-						(int) (p.getDoublePosition(1) - rect.getMinY()), 1);
+						(int) (node.getDoublePosition(1) - rect.getMinY()), 1);
 				positions.put(node, position);
 			}
 			partitionIndex++;
@@ -194,9 +192,9 @@ public class TransitionGraphRenderer {
 		}
 		// ---borders
 
-		for (Edge<T> edge : links.getEdges()) {
-			Node<T> start = edge.getStartNode();
-			Node<T> end = edge.getEndNode();
+		for (Edge edge : links.getEdges()) {
+			TrackedNode start = edge.getStartNode();
+			TrackedNode end = edge.getEndNode();
 
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);

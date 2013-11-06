@@ -11,7 +11,7 @@ import net.imglib2.ops.operation.randomaccessibleinterval.unary.ConvexHull2D;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
 
-import org.knime.knip.trackingrevised.data.graph.Node;
+import org.knime.knip.trackingrevised.data.graph.TrackedNode;
 import org.knime.knip.trackingrevised.data.graph.TransitionGraph;
 
 public class ShapeFeatures extends FeatureClass {
@@ -20,20 +20,18 @@ public class ShapeFeatures extends FeatureClass {
 	public String getName() {
 		return "Shape Features";
 	}
-	
-	@Feature(name ="diff shape")
-	public static <T extends RealType<T>> double diffShape(TransitionGraph<T> tg) {
+
+	@Feature(name = "diff shape")
+	public static <T extends RealType<T>> double diffShape(TransitionGraph tg) {
 		return 0.0;
 	}
-	
-	@Feature(name ="shape evenness")
-	public static <T extends RealType<T>> double shapeEvenness(TransitionGraph<T> tg) {
+
+	@Feature(name = "shape evenness")
+	public static <T extends RealType<T>> double shapeEvenness(
+			TransitionGraph tg) {
 		return 0.0;
 	}
-	
-	
-	
-	
+
 	/**
 	 * Returns the shape compactness. It compares the sizes of a single segment
 	 * with the size of the convex hull of the other segments.
@@ -43,7 +41,8 @@ public class ShapeFeatures extends FeatureClass {
 	 * @return the shape compactness value
 	 */
 	@Feature(name = "Shape Compactness")
-	public static <T extends RealType<T>> double shapeCompactness(TransitionGraph<T> tg) {
+	public static <T extends RealType<T>> double shapeCompactness(
+			TransitionGraph tg) {
 		if (tg.getNodes(tg.getFirstPartition()).size() == 0
 				|| tg.getNodes(tg.getLastPartition()).size() == 0)
 			return Double.NaN;
@@ -89,11 +88,11 @@ public class ShapeFeatures extends FeatureClass {
 	 *            the partition
 	 * @return an {@link Img} with all nodes of the partition
 	 */
-	private static <T extends RealType<T>> Img<BitType> createPartitionImg(TransitionGraph<T> tg,
+	private static Img<BitType> createPartitionImg(TransitionGraph tg,
 			String partition) {
-		Collection<Node<T>> nodes = tg.getNodes(partition);
+		Collection<TrackedNode> nodes = tg.getNodes(partition);
 		Rectangle2D rect = null;
-		for (Node<T> node : nodes) {
+		for (TrackedNode node : nodes) {
 			if (rect == null) {
 				rect = node.getImageRectangle();
 			} else {
@@ -107,7 +106,7 @@ public class ShapeFeatures extends FeatureClass {
 				new BitType());
 		RandomAccess<BitType> ra = img.randomAccess();
 		long[] pos = new long[2];
-		for (Node<T> node : nodes) {
+		for (TrackedNode node : nodes) {
 			Rectangle2D imgRect = node.getImageRectangle();
 			Cursor<BitType> cursor = node.getBitmask().getImgPlus()
 					.localizingCursor();
