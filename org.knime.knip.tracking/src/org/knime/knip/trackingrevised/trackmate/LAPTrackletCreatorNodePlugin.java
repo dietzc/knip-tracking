@@ -7,15 +7,6 @@ package org.knime.knip.trackingrevised.trackmate;
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 
-/**
- * This is the eclipse bundle activator.
- * Note: KNIME node developers probably won't have to do anything in here, 
- * as this class is only needed by the eclipse platform/plugin mechanism.
- * If you want to move/rename this file, make sure to change the plugin.xml
- * file in the project root directory accordingly.
- *
- * @author Stephan Sellien
- */
 public class LAPTrackletCreatorNodePlugin extends Plugin {
     // The shared instance.
     private static LAPTrackletCreatorNodePlugin plugin;

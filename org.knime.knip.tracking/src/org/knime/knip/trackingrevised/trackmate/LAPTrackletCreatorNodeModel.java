@@ -1,13 +1,12 @@
 package org.knime.knip.trackingrevised.trackmate;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
+import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
@@ -16,28 +15,35 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelDoubleBounded;
-import org.knime.knip.trackingrevised.util.Hungarian;
 import org.knime.knip.trackingrevised.util.PartitionComparator;
 import org.knime.knip.trackingrevised.util.TrackingConstants;
 import org.knime.network.core.api.GraphObjectIterator;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.KPartiteGraphView;
+import org.knime.network.core.api.Node;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.PartitionType;
+import org.knime.network.core.core.exception.InvalidFeatureException;
+import org.knime.network.core.core.exception.PersistenceException;
 import org.knime.network.core.core.feature.FeatureTypeFactory;
 import org.knime.network.core.knime.node.KPartiteGraphNodeModel;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
 import Jama.Matrix;
+import fiji.plugin.trackmate.tracking.SimpleLAPTracker;
+import fiji.plugin.trackmate.tracking.TrackerKeys;
+import fiji.plugin.trackmate.tracking.hungarian.AssignmentAlgorithm;
+import fiji.plugin.trackmate.tracking.hungarian.AssignmentProblem;
+import fiji.plugin.trackmate.tracking.hungarian.HungarianAlgorithm;
+import fiji.plugin.trackmate.tracking.hungarian.MunkresKuhnAlgorithm;
 
-/**
- * This is the model implementation of TrackletCreator. Creates Tracklets (parts
- * of a trajectory) out of a given segmentation as graphs.
- * 
- * @author Raffael Wagner, Jonas Zinn
- */
 public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
+
+	enum LAPTrackerVariant {
+		Hungarian, MunkresKuhnAlgorithm;
+	}
+
 	NodeLogger logger = NodeLogger.getLogger(LAPTrackletCreatorNodeModel.class);
 
 	private final static String CFGKEY_MAXRADIUS = "maxradius";
@@ -58,7 +64,7 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 		return new SettingsModelBoolean(CFGKEY_GAPS, true);
 	}
 
-	private SettingsModelDoubleBounded m_MaxRadius = createMaxRadiusSetting();
+	private SettingsModelDoubleBounded m_maxRadius = createMaxRadiusSetting();
 
 	private SettingsModelDouble m_threshold = createThresholdSetting();
 
@@ -74,11 +80,6 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 	protected KPartiteGraphView<PersistentObject, Partition> execute(
 			ExecutionContext exec,
 			KPartiteGraph<PersistentObject, Partition> net) throws Exception {
-
-		double maxRadius = m_MaxRadius.getDoubleValue();
-		double threshold = m_threshold.getDoubleValue();
-		boolean gapClosing = m_gaps.getBooleanValue();
-
 		List<Partition> partitions = new LinkedList<Partition>(
 				net.getPartitions(PartitionType.NODE));
 
@@ -87,91 +88,58 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 
 		exec.setMessage("Search for linear edges ...");
 
-		// final tracklet edges
+		// some network stuff
 		Partition trackletEdgePartition = net.createPartition(
 				TrackingConstants.TRACKLET_EDGE_PARTITION, PartitionType.EDGE);
 
-		// trackletstartnode
 		net.defineFeature(FeatureTypeFactory.getStringType(),
 				TrackingConstants.FEATURE_TRACKLETSTARTNODE);
-		// tracklet size
+
 		net.defineFeature(FeatureTypeFactory.getIntegerType(),
 				TrackingConstants.FEATURE_TRACKLET_SIZE);
 
-		// the current and the next Partion
-		ArrayList<PersistentObject> partitionNodes;
-		ArrayList<PersistentObject> nPartitionNodes;
-
-		// a set of all start and end nodes from the Tracklet
-		Set<PersistentObject> starts = new HashSet<PersistentObject>();
-		Set<PersistentObject> ends = new HashSet<PersistentObject>();
-		// time stamp from all nodes
-		HashMap<PersistentObject, Integer> timeReference = new HashMap<PersistentObject, Integer>();
-
-		double sigma = net.getDoubleFeature(net,
-				TrackingConstants.NETWORK_FEATURE_STDEV);
-
-		// do we already have this source or target
-		Set<PersistentObject> sources = new HashSet<PersistentObject>();
-		Set<PersistentObject> targets = new HashSet<PersistentObject>();
-
 		// go over all partitions
+		fillNetworkWithTracklets(exec, net, partitions, trackletEdgePartition);
+
+		net.commit();
+		return net;
+	}
+
+	/**
+	 * @param exec
+	 * @param net
+	 * @param partitions
+	 * @param trackletEdgePartition
+	 * @throws PersistenceException
+	 * @throws CanceledExecutionException
+	 * @throws InvalidFeatureException
+	 */
+	private void fillNetworkWithTracklets(ExecutionContext exec,
+			KPartiteGraph<PersistentObject, Partition> net,
+			List<Partition> partitions, Partition trackletEdgePartition)
+			throws PersistenceException, CanceledExecutionException,
+			InvalidFeatureException {
 		for (int p = 0; p < partitions.size() - 1; p++) {
-			Partition partition = partitions.get(p);
-			Partition nextPartition = partitions.get(p + 1);
-			GraphObjectIterator<PersistentObject> t0 = net.getNodes(partition);
-			GraphObjectIterator<PersistentObject> t1 = net
-					.getNodes(nextPartition);
+			System.out.println("next partition");
+			Partition t0partition = partitions.get(p);
+			Partition t1Partition = partitions.get(p + 1);
 
-			// store the nodes in both partitions so we don't
-			// need to iterate all time over the partitions
-			partitionNodes = new ArrayList<PersistentObject>();
-			nPartitionNodes = new ArrayList<PersistentObject>();
-			int countp1 = 0;
-			for (PersistentObject obj : t0) {
-				partitionNodes.add(obj);
-				timeReference.put(obj, p);
-				countp1++;
-			}
-			int countp2 = 0;
-			for (PersistentObject obj : t1) {
-				nPartitionNodes.add(obj);
-				countp2++;
-			}
-			int anz1 = countp1, anz2 = countp2;
+			final int t0Size = numNodes(net, t0partition);
+			final int t1Size = numNodes(net, t1Partition);
+
+			HashMap<Integer, PersistentObject> idxMapT0 = new HashMap<Integer, PersistentObject>();
+			HashMap<Integer, PersistentObject> idxMapT1 = new HashMap<Integer, PersistentObject>();
+
 			// create cost matrix
-			Matrix m = new Matrix(anz1, anz2);
-			countp1 = 0;
-			// fill cost matrix with edges weight
-			t0 = net.getNodes(partition);
-			for (PersistentObject obj : t0) {
-				countp2 = 0;
-				t1 = net.getNodes(nextPartition);
-				for (PersistentObject obj2 : t1) {
-					PersistentObject edge = null;
-					for (PersistentObject t : net.getOutgoingEdges(obj)) {
-						if (net.getIncidentNodes(t).contains(obj2)) {
-							edge = t;
-							break;
-						}
-					}
-
-					m.set(countp1,
-							countp2,
-							edge == null ? Double.POSITIVE_INFINITY
-									: net.getEdgeWeight(edge) > maxRadius ? Double.POSITIVE_INFINITY
-											: net.getEdgeWeight(edge));
-					countp2++;
-				}
-				countp1++;
-			}
+			double[][] costMatrix = createCostMatrix(t0Size, t1Size, net,
+					t0partition, t1Partition, idxMapT0, idxMapT1);
 
 			exec.checkCanceled();
 
 			boolean allBlocked = true;
-			for (int i = 0; i < anz1; i++) {
-				for (int j = 0; j < anz2; j++) {
-					if (m.get(i, j) != Double.POSITIVE_INFINITY) {
+			for (int i = 0; i < costMatrix.length; i++) {
+				for (int j = 0; j < costMatrix[i].length; j++) {
+					if (costMatrix[i][j] != Double.POSITIVE_INFINITY) {
 						allBlocked = false;
 						break;
 					}
@@ -180,192 +148,266 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 					break;
 			}
 
-			// can we find something in the matrix?
 			if (!allBlocked) {
-				// apply the Hungarian algo to it
-				Hungarian hungarian = new Hungarian(m, 15);
-				int[][] solutions = hungarian.solve();
+				// Find solution
+				final AssignmentProblem problem = new AssignmentProblem(
+						costMatrix);
+				final AssignmentAlgorithm solver = createAssignmentProblemSolver(LAPTrackerVariant.MunkresKuhnAlgorithm);
+
+				final int[][] solutions = problem.solve(solver);
 
 				// Extend track segments using solutions: we update the graph
 				// edges
 				for (int j = 0; j < solutions.length; j++) {
 					if (solutions[j].length == 0)
 						continue;
-					int i0 = solutions[j][0];
-					int i1 = solutions[j][1];
+					final int i0 = solutions[j][0];
+					final int i1 = solutions[j][1];
 
-					// connect the found solutions to each other
-					// frame to frame linking
-					if (i0 < anz1 && i1 < anz2) {
-						PersistentObject source = partitionNodes.get(i0);
-						PersistentObject target = nPartitionNodes.get(i1);
+					if (i0 < t0Size && i1 < t1Size) {
+						// Solution belong to the upper-left quadrant: we can
+						// connect the spots
 
-						// check if this is a valid edge
-						double prob = (Math.exp(-m.get(i0, i1) / sigma) * 100);
-						if (prob < threshold)
-							break;
-						// we don't link on of the source or the target in this
-						// frame
-						// if they are linked already in this frame
-						if (!sources.contains(source)
-								&& !targets.contains(target)) {
-							// create the new edge and change the tracklet
-							PersistentObject newEdge = net.createEdge(source
-									+ "-" + target, trackletEdgePartition,
-									source, target);
-							net.setEdgeWeight(newEdge, prob);
+						PersistentObject source = idxMapT0.get(i0);
+						PersistentObject target = idxMapT1.get(i1);
 
-							net.addFeature(source,
-									TrackingConstants.FEATURE_ISTRACKLETEND,
-									false);
-							ends.add(target);
-							ends.remove(source);
-							String startNode = net
-									.getFeatureString(
-											source,
-											TrackingConstants.FEATURE_TRACKLETSTARTNODE);
-							// if we don't already have a start node take the
-							// current and save it
-							if (startNode == null) {
-								startNode = source.getId();
-								starts.add(source);
-							}
-							net.addFeature(
-									target,
-									TrackingConstants.FEATURE_TRACKLETSTARTNODE,
-									startNode);
-							// count tracklet size
-							PersistentObject trackletStartNode = net
-									.getNode(startNode);
-							Integer trackletSize = net.getIntegerFeature(
-									trackletStartNode,
-									TrackingConstants.FEATURE_TRACKLET_SIZE);
-							if (trackletSize == null) {
-								trackletSize = 2;
-							} else {
-								trackletSize++;
-							}
-							net.addFeature(trackletStartNode,
-									TrackingConstants.FEATURE_TRACKLET_SIZE,
-									trackletSize);
+						// We set the edge weight to be the linking cost, for
+						// future reference. This is NOT used in further tracking steps
+						final double weight = costMatrix[i0][i1];
 
-							sources.add(source);
-							targets.add(target);
-						}
-					}
-				}
-			}
-		}
-		// store the number of frames we got.
-		int numberPart = partitions.size() - 1;
-		// create the time reference table
-		for (PersistentObject obj : net.getNodes(partitions.get(numberPart)))
-			timeReference.put(obj, numberPart);
-		exec.checkCanceled();
-		// do gap closing
-		if (gapClosing) {
-			// if we have to delete start or end nodes from the global list, we
-			// have to store them temporaly
-			HashSet<PersistentObject> delEnd = new HashSet<PersistentObject>();
-			HashSet<PersistentObject> delStart = new HashSet<PersistentObject>();
-			// Go throw all ends
-			for (PersistentObject end : ends) {
-				// if the endpoints is not the final endpoint of time
-				int timeFrame = timeReference.get(end) + 2;
+						PersistentObject edge = net
+								.createEdge(source + "-" + target,
+										trackletEdgePartition, source, target);
 
-				double x = (Double) net.getFeatureValue(end, "Centroid X");
-				double y = (Double) net.getFeatureValue(end, "Centroid Y");
+						net.setEdgeWeight(edge, weight);
 
-				// have a look at the Frame after to frames
-				double min = Double.POSITIVE_INFINITY;
-				PersistentObject gapObj = null;
-				for (PersistentObject obj : starts) {
-					// filter out nodes that are in former frames
-					if (timeReference.get(obj) < timeFrame)
-						continue;
-					// find the closest node that is within the max Radius
-					double x_gap = (Double) net.getFeatureValue(obj,
-							"Centroid X");
-					double y_gap = (Double) net.getFeatureValue(obj,
-							"Centroid Y");
-					double weight = Math.sqrt(Math.pow(x - x_gap, 2)
-							+ Math.pow(y - y_gap, 2));
-					if (weight < min && weight < maxRadius) {
-						min = weight;
-						gapObj = obj;
-					}
-				}
-				double prob = (Math.exp(-min / sigma) * 100);
-				if (null == gapObj || prob < threshold)
-					continue;
-				// we found a Node, which is similar to our endpoint, but 2
-				// Frames away
-				// so we craete a new edge between them and change their
-				// tracklets
-				PersistentObject edge = net.createEdge(end + "-" + gapObj,
-						trackletEdgePartition, end, gapObj);
-				net.setEdgeWeight(edge, (int) prob);
-				net.addFeature(end, TrackingConstants.FEATURE_ISTRACKLETEND,
-						false);
-				delEnd.add(end);
-				delStart.add(gapObj);
-				PersistentObject start = net.getNode(net.getFeatureString(end,
-						TrackingConstants.FEATURE_TRACKLETSTARTNODE));
-				Integer trackletSizeNew = net.getIntegerFeature(start,
-						TrackingConstants.FEATURE_TRACKLET_SIZE);
-				Integer trackletSizeOld = net.getIntegerFeature(gapObj,
-						TrackingConstants.FEATURE_TRACKLET_SIZE);
-				net.addFeature(start, TrackingConstants.FEATURE_TRACKLET_SIZE,
-						trackletSizeNew + trackletSizeOld);
-				// for the later tracklet we have to assign a new start node of
-				// the tracklet
-				boolean found = true;
-				for (int i = timeFrame; i < numberPart && found; i++) {
-					found = false;
-					for (PersistentObject n : net.getNodes(partitions.get(i))) {
+						net.addFeature(source,
+								TrackingConstants.FEATURE_ISTRACKLETEND, false);
 
-						String startNode = net.getFeatureString(n,
+						String startNode = net.getFeatureString(source,
 								TrackingConstants.FEATURE_TRACKLETSTARTNODE);
-						if (gapObj.getId().equals(startNode)) {
-							found = true;
-							net.addFeature(
-									n,
-									TrackingConstants.FEATURE_TRACKLETSTARTNODE,
-									start.getId());
+
+						if (startNode == null) {
+							startNode = source.getId();
 						}
-					}
+
+						net.addFeature(target,
+								TrackingConstants.FEATURE_TRACKLETSTARTNODE,
+								startNode);
+
+						// count tracklet size
+						PersistentObject trackletStartNode = net
+								.getNode(startNode);
+						Integer trackletSize = net.getIntegerFeature(
+								trackletStartNode,
+								TrackingConstants.FEATURE_TRACKLET_SIZE);
+						if (trackletSize == null) {
+							trackletSize = 2;
+						} else {
+							trackletSize++;
+						}
+						net.addFeature(trackletStartNode,
+								TrackingConstants.FEATURE_TRACKLET_SIZE,
+								trackletSize);
+
+					} // otherwise we do not create any connection
 				}
 			}
-			// now we can remove the start and end nodes we modified
-			ends.removeAll(delEnd);
-			starts.removeAll(delStart);
+		}
+	}
+
+	protected AssignmentAlgorithm createAssignmentProblemSolver(
+			LAPTrackerVariant variant) {
+
+		// TODO: make extensionpoint
+		switch (variant) {
+		case Hungarian:
+			return new MunkresKuhnAlgorithm();
+		case MunkresKuhnAlgorithm:
+			return new MunkresKuhnAlgorithm();
+		default:
+			throw new IllegalArgumentException(
+					"Unknown LAP-Tracker Implementation");
 		}
 
-		// store the start and end notes, timestamps to the graph so we can
-		// later apply merging and splitting
-		net.defineFeature(FeatureTypeFactory.getListType(FeatureTypeFactory
-				.getStringType()), TrackMateConstants.START_NODES);
-		net.defineFeature(FeatureTypeFactory.getListType(FeatureTypeFactory
-				.getStringType()), TrackMateConstants.END_NODES);
-		net.defineFeature(FeatureTypeFactory.getIntegerType(),
-				TrackMateConstants.TIME_STAMPS);
+	}
 
-		List<String> startList = new LinkedList<String>();
-		for (PersistentObject obj : starts)
-			startList.add(obj.getId());
-		List<String> endList = new LinkedList<String>();
-		for (PersistentObject obj : ends)
-			endList.add(obj.getId());
-		for (PersistentObject obj : timeReference.keySet()) {
-			net.addFeature(obj, TrackMateConstants.TIME_STAMPS,
-					timeReference.get(obj));
+	// heavily inspired by LinkingCostMatrixCreator of TrackMate (actually
+	// copied ;-))
+	private double[][] createCostMatrix(int t0Size, int t1Size,
+			KPartiteGraph<PersistentObject, Partition> net, Partition t0,
+			Partition t1, HashMap<Integer, PersistentObject> idxMapT0,
+			HashMap<Integer, PersistentObject> idxMapT1)
+			throws PersistenceException {
+
+		// the cost matrix
+		Matrix costs = null;
+
+		// special cases
+		if (t1Size == 1) {
+			// 0.1 - No spots in late frame -> termination only.
+			costs = new Matrix(t0Size, t0Size,
+					TrackerKeys.DEFAULT_BLOCKING_VALUE);
+			for (int i = 0; i < t0Size; i++) {
+				costs.set(i, i, 0);
+			}
 		}
 
-		net.addFeature(net, TrackMateConstants.START_NODES, startList);
-		net.addFeature(net, TrackMateConstants.END_NODES, endList);
+		if (t0Size == 0) {
+			// 0.1 - No spots in late frame -> termination only.
+			costs = new Matrix(t1Size, t1Size,
+					TrackerKeys.DEFAULT_BLOCKING_VALUE);
+			for (int i = 0; i < t1Size; i++) {
+				costs.set(i, i, 0);
+			}
+		}
 
-		net.commit();
-		return net;
+		if (costs != null)
+			return costs.getArray();
+		else
+			costs = new Matrix(t0Size + t1Size, t0Size + t1Size);
+
+		// fill the quadrants! Important difference to TrackMate: We have done
+		// all the feature calculation / edge pruning beforehands in our add
+		// distance edges node
+		Matrix topLeft = getLinkingCostMatrix(t0Size, t1Size, net, t0, t1,
+				idxMapT0, idxMapT1);
+
+		final double alternativeCostFactor = TrackerKeys.DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR;
+		final double cutoff = alternativeCostFactor * getMaxScore(topLeft);
+
+		//
+		Matrix topRight = getAlternativeScores(t0Size, cutoff);
+		Matrix bottomLeft = getAlternativeScores(t1Size, cutoff);
+		Matrix bottomRight = getLowerRight(topLeft, cutoff);
+
+		// 2 - Fill in complete cost matrix by quadrant
+		costs.setMatrix(0, t0Size - 1, 0, t1Size - 1, topLeft);
+		costs.setMatrix(t0Size, costs.getRowDimension() - 1, t1Size,
+				costs.getColumnDimension() - 1, bottomRight);
+		costs.setMatrix(0, t0Size - 1, t1Size, costs.getColumnDimension() - 1,
+				topRight);
+		costs.setMatrix(t0Size, costs.getRowDimension() - 1, 0, t1Size - 1,
+				bottomLeft);
+
+		return costs.getArray();
+	}
+
+	/**
+	 * Takes the submatrix of costs defined by rows 0 to numRows - 1 and columns
+	 * 0 to numCols - 1, transpose it, and sets any non-BLOCKED value to be
+	 * cutoff.
+	 * <p>
+	 * The reasoning for this is explained in the supplementary notes of the
+	 * paper, but basically it has to be made this way so that the LAP is
+	 * solvable.
+	 */
+	protected Matrix getLowerRight(Matrix topLeft, double cutoff) {
+		final double blockingValue = TrackerKeys.DEFAULT_BLOCKING_VALUE;
+		Matrix lowerRight = topLeft.transpose();
+		for (int i = 0; i < lowerRight.getRowDimension(); i++) {
+			for (int j = 0; j < lowerRight.getColumnDimension(); j++) {
+				if (lowerRight.get(i, j) < blockingValue) {
+					lowerRight.set(i, j, cutoff);
+				}
+			}
+		}
+		return lowerRight;
+	}
+
+	/**
+	 * Sets alternative scores in a new matrix along a diagonal. The new matrix
+	 * is n x n, and is set to BLOCKED everywhere except along the diagonal that
+	 * runs from top left to bottom right.
+	 */
+	protected Matrix getAlternativeScores(int n, double cutoff) {
+		final double blockingValue = TrackerKeys.DEFAULT_BLOCKING_VALUE;
+		final Matrix alternativeScores = new Matrix(n, n, blockingValue);
+
+		// Set the cutoff along the diagonal (top left to bottom right)
+		for (int i = 0; i < alternativeScores.getRowDimension(); i++) {
+			alternativeScores.set(i, i, cutoff);
+		}
+
+		return alternativeScores;
+	}
+
+	/**
+	 * Gets the max score in a matrix m.
+	 */
+	private double getMaxScore(Matrix m) {
+		final double blockingValue = TrackerKeys.DEFAULT_BLOCKING_VALUE;
+		double max = Double.NEGATIVE_INFINITY;
+
+		for (int i = 0; i < m.getRowDimension(); i++) {
+			for (int j = 0; j < m.getColumnDimension(); j++) {
+				if (m.get(i, j) > max && m.get(i, j) < blockingValue) {
+					max = m.get(i, j);
+				}
+			}
+		}
+		return max;
+	}
+
+	public Matrix getLinkingCostMatrix(int t0Size, int t1Size,
+			KPartiteGraph<PersistentObject, Partition> net, Partition t0,
+			Partition t1, Map<Integer, PersistentObject> idxMapT0,
+			Map<Integer, PersistentObject> idxMapT1)
+			throws PersistenceException {
+		//
+		final Matrix m = new Matrix(t0Size, t1Size,
+				TrackerKeys.DEFAULT_BLOCKING_VALUE);
+
+		//
+		final GraphObjectIterator<PersistentObject> t0Nodes = net.getNodes(t0);
+
+		// fill cost matrix with edges weight
+		HashMap<Node, Integer> helperMap = new HashMap<Node, Integer>();
+
+		int nodeIdxT0 = 0;
+		while (t0Nodes.hasNext()) {
+			// get outgoing edges for current node
+			final PersistentObject nodeT0 = t0Nodes.next();
+			idxMapT0.put(nodeIdxT0, nodeT0);
+			for (PersistentObject outEdge : net
+					.getIncidentEdges(nodeT0, t0, t1)) {
+				PersistentObject nodeT1 = net.getIncidentNodes(outEdge, t1)
+						.next();
+				int nodeIdxT1 = getIdx(nodeT1, helperMap);
+				
+				// as each edge is 1to1
+				m.set(nodeIdxT0, nodeIdxT1, net.getEdgeWeight(nodeT0, outEdge));
+
+				idxMapT1.put(nodeIdxT1, nodeT1);
+			}
+			nodeIdxT0++;
+		}
+
+		return m;
+	}
+
+	private int getIdx(PersistentObject node,
+			HashMap<Node, Integer> integerNodeMap) {
+
+		Integer integer = integerNodeMap.get(node);
+		if (integer == null) {
+			integer = integerNodeMap.size() + 1;
+			integerNodeMap.put(node, integer);
+		}
+
+		return integer;
+	}
+
+	private int numNodes(KPartiteGraph<PersistentObject, Partition> net,
+			Partition partition) throws PersistenceException {
+		GraphObjectIterator<PersistentObject> nodes = net.getNodes(partition);
+		int ctr = 0;
+		while (nodes.hasNext()) {
+			nodes.next();
+			ctr++;
+		}
+
+		return ctr;
 	}
 
 	@Override
@@ -374,7 +416,7 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 
 	@Override
 	protected void saveSettingsTo(NodeSettingsWO settings) {
-		m_MaxRadius.saveSettingsTo(settings);
+		m_maxRadius.saveSettingsTo(settings);
 		m_threshold.saveSettingsTo(settings);
 		m_gaps.saveSettingsTo(settings);
 	}
@@ -382,7 +424,7 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 	@Override
 	protected void validateSettings(NodeSettingsRO settings)
 			throws InvalidSettingsException {
-		m_MaxRadius.validateSettings(settings);
+		m_maxRadius.validateSettings(settings);
 		m_threshold.validateSettings(settings);
 		m_gaps.validateSettings(settings);
 	}
@@ -390,7 +432,7 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 	@Override
 	protected void loadValidatedSettingsFrom(NodeSettingsRO settings)
 			throws InvalidSettingsException {
-		m_MaxRadius.loadSettingsFrom(settings);
+		m_maxRadius.loadSettingsFrom(settings);
 		m_threshold.loadSettingsFrom(settings);
 		m_gaps.loadSettingsFrom(settings);
 	}

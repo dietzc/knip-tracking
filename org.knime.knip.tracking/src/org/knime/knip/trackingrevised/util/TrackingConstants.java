@@ -37,5 +37,8 @@ public interface TrackingConstants {
 	public final static double ALPHA = 0.0001;
 	// minimal init propability
 	public final static double ETA = 0.00000001;
+	
+	// name of the GAP partition
+	public static final String GAP_PARTITION_NAME = "gapPartition";
 
 }
