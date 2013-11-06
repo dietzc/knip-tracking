@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode icon="./default.png" type="Other">
+    <name>LAPTrackletCreator</name>
+    
+    <shortDescription>
+        Creates Tracklets out of a given segmentation as graphs.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>Creates tracklets with a linear assignement problem algorithm. It uses the hungarian algorithm to find the connected
+        nodes in each frame to frame segment and puts them together into a tracklet. It also connects tracklets with gaps, if wanted.</intro>
+        
+        
+        <option name="threshold">the threshold used for the calculation if an edge is valid</option>
+        <option name="max Radius"> the max radius that two spots in 2 time frames can have to belong to the same tracklet. </option>
+ 		<option name="gap closing"> Choose whether gap closing is wanted.</option>
+ 		   
+    </fullDescription>
+    
+    <ports>
+        <inPort index="0" name="Graph"> a KPartite Graph</inPort>
+        
+        <outPort index="0" name="Graph">a KPartite Graph</outPort>
+        
+    </ports>    
+</knimeNode>
