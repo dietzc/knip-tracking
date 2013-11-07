@@ -37,6 +37,7 @@ import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
 import fiji.plugin.trackmate.TrackableObjectCollection;
 import fiji.plugin.trackmate.tracking.LAPUtils;
+import fiji.plugin.trackmate.tracking.TrackerKeys;
 import fiji.plugin.trackmate.tracking.TrackingUtils;
 
 public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
@@ -104,15 +105,18 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 		// Set the tracking settings
 		final Map<String, Object> trackerSettings = LAPUtils
 				.getDefaultLAPSettingsMap();
-		trackerSettings.put(KEY_LINKING_MAX_DISTANCE, 2d);
+		trackerSettings.put(KEY_LINKING_MAX_DISTANCE, 20d);
 		trackerSettings.put(KEY_ALLOW_GAP_CLOSING, true);
 
 		TrackableObjectCollection<TrackedNode> nodes = new TrackableObjectCollection<TrackedNode>();
 
-		for (int p = 0; p < partitions.size(); p++) {
-			Iterator<PersistentObject> iterator = net.getNodes().iterator();
+		for (Partition p : net.getPartitions()) {
+			if (p.getId().startsWith("tra"))
+				continue;
+			Iterator<PersistentObject> iterator = net.getNodes(p).iterator();
 			while (iterator.hasNext()) {
-				nodes.add(new TrackedNode(net, iterator.next()), p);
+				TrackedNode trackedNode = new TrackedNode(net, iterator.next());
+				nodes.add(trackedNode, trackedNode.frame());
 			}
 		}
 
@@ -136,30 +140,33 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 		}
 
 		for (SortedSet<TrackedNode> track : trackSegments) {
-			// Iterator
-			Iterator<TrackedNode> iterator = track.iterator();
 
 			// process first as source
 			PersistentObject startNode = track.first().getPersistentObject();
 			String startNodeId = startNode.getId();
 
-			net.addFeatureString(startNode,
-					TrackingConstants.FEATURE_TRACKLETSTARTNODE, startNodeId);
+			// net.addFeatureString(startNode,
+			// TrackingConstants.FEATURE_TRACKLETSTARTNODE, startNodeId);
 			net.addFeature(startNode, TrackingConstants.FEATURE_ISTRACKLETEND,
 					false);
 			net.addFeature(startNode, TrackingConstants.FEATURE_TRACKLET_SIZE,
 					track.size());
-
+			
 			// process first as sink
 			// process middle nodes
 			PersistentObject endNode = track.last().getPersistentObject();
 
-			net.addFeatureString(endNode,
-					TrackingConstants.FEATURE_TRACKLETSTARTNODE, startNodeId);
+			if (startNode != endNode)
+				net.addFeatureString(endNode,
+						TrackingConstants.FEATURE_TRACKLETSTARTNODE,
+						startNodeId);
+
 			net.addFeature(endNode, TrackingConstants.FEATURE_ISTRACKLETEND,
 					true);
 
 			// skip first
+			// Iterator
+			Iterator<TrackedNode> iterator = track.iterator();
 			iterator.next();
 			int ctr = 1;
 
@@ -173,7 +180,7 @@ public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 				net.addFeature(next.getPersistentObject(),
 						TrackingConstants.FEATURE_ISTRACKLETEND, false);
 
-				net.addFeatureString(startNode,
+				net.addFeatureString(next.getPersistentObject(),
 						TrackingConstants.FEATURE_TRACKLETSTARTNODE,
 						startNodeId);
 

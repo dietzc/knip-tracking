@@ -85,11 +85,11 @@ public class TrackletNetwork2LabelingNodeModel extends
 			String componentStart = wcc.getComponent(node.getId());
 
 			String trackletStartNode = componentStart;
-
 			String temp = trackletStartNode;
 			while ((temp = net.getStringFeature(net.getNode(temp),
 					TrackingConstants.FEATURE_TRACKLETSTARTNODE)) != null) {
 				trackletStartNode = temp;
+				exec.checkCanceled();
 			}
 
 			String label = "Track " + trackletStartNode;
