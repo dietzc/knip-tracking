@@ -1,6 +1,7 @@
 package org.knime.knip.trackingrevised.data.graph;
 
 import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,10 +41,13 @@ public class TrackedNode extends GraphObject implements
 	// this
 	private RealPoint point;
 	private double frame;
+	private HashMap<String, Double> m_features;
 
 	public TrackedNode(KPartiteGraphView<PersistentObject, Partition> net,
 			PersistentObject pObj) {
 		super(net, pObj);
+
+		m_features = new HashMap<String, Double>();
 
 		double x = getDoubleFeature(CENTROID_X);
 		double y = getDoubleFeature(CENTROID_Y);
@@ -198,10 +202,12 @@ public class TrackedNode extends GraphObject implements
 	@SuppressWarnings({ "unchecked" })
 	public ImgPlusValue<? extends RealType<?>> getSegmentImage() {
 		try {
-			return (ImgPlusValue<? extends RealType<?>>) getNetwork().getFeatureCell(
-					FileStoreFactory.createNotInWorkflowFileStoreFactory(),
-					getPersistentObject(),
-					TrackingConstants.FEATURE_SEGMENT_IMG);
+			return (ImgPlusValue<? extends RealType<?>>) getNetwork()
+					.getFeatureCell(
+							FileStoreFactory
+									.createNotInWorkflowFileStoreFactory(),
+							getPersistentObject(),
+							TrackingConstants.FEATURE_SEGMENT_IMG);
 		} catch (PersistenceException e) {
 			e.printStackTrace();
 		} catch (InvalidFeatureException e) {
@@ -275,6 +281,10 @@ public class TrackedNode extends GraphObject implements
 
 	@Override
 	public Double getFeature(String feature) {
+		if (m_features.containsKey(feature)) {
+			return m_features.get(feature);
+		}
+
 		try {
 			return getNetwork()
 					.getDoubleFeature(getPersistentObject(), feature);
@@ -287,7 +297,7 @@ public class TrackedNode extends GraphObject implements
 
 	@Override
 	public void putFeature(String feature, Double value) {
-		throw new UnsupportedOperationException("can't set feature");
+		m_features.put(feature, value);
 	}
 
 	@Override
