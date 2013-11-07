@@ -37,7 +37,6 @@ import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
 import fiji.plugin.trackmate.TrackableObjectCollection;
 import fiji.plugin.trackmate.tracking.LAPUtils;
-import fiji.plugin.trackmate.tracking.TrackerKeys;
 import fiji.plugin.trackmate.tracking.TrackingUtils;
 
 public class LAPTrackletCreatorNodeModel extends KPartiteGraphNodeModel {
