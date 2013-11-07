@@ -51,18 +51,15 @@ public class TrackedNode extends GraphObject implements
 
 		double x = getDoubleFeature(CENTROID_X);
 		double y = getDoubleFeature(CENTROID_Y);
-		if (!hasFeature(CENTROID_Z))
-			point = new RealPoint(x, y, getDoubleFeature(CENTROID_TIME));
-		else {
-			double z = 0.0;
-			try {
-				z = getDoubleFeature(CENTROID_Z);
-			} catch (Exception e) {
-				// no z needed if not available
-				// TODO: maybe create setting for coords
-			}
-			point = new RealPoint(x, y, z, getDoubleFeature(CENTROID_TIME));
-		}
+		double z = getDoubleFeature(CENTROID_Z);
+		double time = getDoubleFeature(CENTROID_TIME);
+
+		if (Double.isNaN(z) && !Double.isNaN(time))
+			point = new RealPoint(x, y, time);
+		else if (!Double.isNaN(z) && Double.isNaN(time))
+			point = new RealPoint(x, y, z);
+		else if (!Double.isNaN(z) && !Double.isNaN(time))
+			point = new RealPoint(x, y, z, time);
 
 		frame = point.getDoublePosition(point.numDimensions() - 1);
 	}
