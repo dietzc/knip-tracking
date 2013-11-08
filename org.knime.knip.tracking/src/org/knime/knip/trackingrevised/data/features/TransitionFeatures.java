@@ -129,13 +129,13 @@ public class TransitionFeatures extends FeatureClass {
 				.next().getBitmask().getImgPlus().getImg();
 		if (tg.getNodes(tg.getFirstPartition()).size() > 1) {
 			fpImg = createPartitionImg(tg, tg.getFirstPartition());
-			ConvexHull2D<Img<BitType>> convexHull = new ConvexHull2D<Img<BitType>>(
+			ConvexHull2D convexHull = new ConvexHull2D(
 					0, 1, true);
 			convexHull.compute(fpImg, fpImg);
 		}
 		if (tg.getNodes(tg.getLastPartition()).size() > 1) {
 			lpImg = createPartitionImg(tg, tg.getLastPartition());
-			ConvexHull2D<Img<BitType>> convexHull = new ConvexHull2D<Img<BitType>>(
+			ConvexHull2D convexHull = new ConvexHull2D(
 					0, 1, true);
 			convexHull.compute(lpImg, lpImg);
 		}

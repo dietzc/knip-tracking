@@ -68,20 +68,26 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 				} else {
 					if (graphs.size() > 0) {
 						TransitionGraph<T> tg = merge(graphs);
-						cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
+						System.out.println("adding " + currentTgId);
+						cont.addRowToTable(new DefaultRow(currentTgId, new DataCell[0]));
 					}
 					currentTgId = tgId;
 					// start a new set
 					graphs.clear();
+					graphs.add(new TransitionGraph<T>(((GraphValue) row
+							.getCell(tgIndex)).getView()));
 				}
-				if (graphs.size() > 0) {
-					TransitionGraph<T> tg = merge(graphs);
-					cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
-				}
-
 			} else {
+				System.out.println("adding " + row.getKey());
 				cont.addRowToTable(new DefaultRow(row.getKey(), new DataCell[0]));
 			}
+		}
+		
+		//add last tg
+		if (graphs.size() > 0) {
+			TransitionGraph<T> tg = merge(graphs);
+			System.out.println("adding " + currentTgId);
+			cont.addRowToTable(new DefaultRow(currentTgId, new DataCell[0]));
 		}
 		
 		cont.close();
@@ -132,8 +138,9 @@ public class TransitionScorerNodeModel<T extends RealType<T>> extends NodeModel 
 	@Override
 	protected DataTableSpec[] configure(final DataTableSpec[] inSpecs)
 			throws InvalidSettingsException {
-		return new DataTableSpec[] { createColumnRearranger(inSpecs[0])
-				.createSpec() };
+//		return new DataTableSpec[] { createColumnRearranger(inSpecs[0])
+//				.createSpec() };
+		return new DataTableSpec[]{createOutspec()};
 	}
 
 	/**
