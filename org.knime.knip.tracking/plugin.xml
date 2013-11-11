@@ -14,27 +14,32 @@
    -->
    
    <extension point="org.knime.workbench.repository.nodes">
-      <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletcreator.TrackletCreatorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcreator.TrackletCreatorNodeFactory"/>
-   <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory" id="org.knime.knip.trackingrevised.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.adddistanceedges.AddDistanceEdgesNodeFactory" id="org.knime.knip.trackingrevised.nodes.adddistanceedges.AddDistanceEdgesNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackletcombiner.TrackletCombinerNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcombiner.TrackletCombinerNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory"/>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.heldreader.HeldReaderNodeFactory" id="org.knime.knip.trackingrevised.nodes.heldreader.HeldReaderNodeFactory">
+      <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.trackletcreator.TrackletCreatorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcreator.TrackletCreatorNodeFactory"/>
+   <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory" id="org.knime.knip.trackingrevised.nodes.createtrackingnetwork.CreateTrackingNetworkNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletnetwork2labeling.TrackletNetwork2LabelingNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.adddistanceedges.AddDistanceEdgesNodeFactory" id="org.knime.knip.trackingrevised.nodes.adddistanceedges.AddDistanceEdgesNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.trackletcombiner.TrackletCombinerNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackletcombiner.TrackletCombinerNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitiongraphbuilder.TransitionGraphBuilderNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.TransitionGraphs2DistanceMatrix.TransitionGraphs2DistanceMatrixNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.heldreader.HeldReaderNodeFactory" id="org.knime.knip.trackingrevised.nodes.heldreader.HeldReaderNodeFactory">
 </node>
-<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.trackingrevised.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory"/>
-<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory"/>
-<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory"/>
-<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
-<node category-path="/" factory-class="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.trackingimagegenerator.TrackingImageGeneratorNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.transitionScorer.TransitionScorerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory"/>
+<node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
+<node
+      category-path="/community/knip/trackingrevised"
+      expert-flag="false"
+      factory-class="org.knime.knip.tracking.trackmate.LAPTrackletCreatorNodeFactory"
+      id="org.knime.knip.trackingrevised.trackmate.LAPTrackletCreatorNodeFactory">
+</node>
 </extension>
    <extension point="org.knime.network.core.FeatureType">
-      <FeatureType FeatureType="org.knime.knip.trackingrevised.data.FeatureTypeImgPlusCell">
+      <FeatureType FeatureType="org.knime.knip.tracking.data.FeatureTypeImgPlusCell">
       </FeatureType>
    </extension>
    <extension point="org.knime.network.base.JungGraphLayout">
-      <JungGraphLayout JungGraphLayout="org.knime.knip.trackingrevised.layout.MyTrackingLayout">
+      <JungGraphLayout JungGraphLayout="org.knime.knip.tracking.layout.MyTrackingLayout">
       </JungGraphLayout>
    </extension>
    <extension point="org.knime.workbench.repository.categories">
