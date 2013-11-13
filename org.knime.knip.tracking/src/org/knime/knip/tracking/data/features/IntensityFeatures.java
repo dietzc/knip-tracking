@@ -7,7 +7,6 @@ import net.imglib2.type.numeric.RealType;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
-import org.knime.network.core.api.PersistentObject;
 
 public class IntensityFeatures extends FeatureClass {
 	@Override
@@ -22,8 +21,7 @@ public class IntensityFeatures extends FeatureClass {
 		return traverseConnectedDiffMV(tg, new CalculationMV() {
 
 			@Override
-			public double[] calculate(PersistentObject po) {
-				TrackedNode node = new TrackedNode(tg.getNet(), po);
+			public double[] calculate(TrackedNode node) {
 				ImgPlusValue<? extends RealType<?>> img = node
 						.getSegmentImage();
 				return createHistogram(img.getImgPlus(), 64);
@@ -38,8 +36,7 @@ public class IntensityFeatures extends FeatureClass {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 
 			@Override
-			public double calculate(PersistentObject po) {
-				TrackedNode node = new TrackedNode(tg.getNet(), po);
+			public double calculate(TrackedNode node) {
 				ImgPlusValue<? extends RealType<?>> img = node
 						.getSegmentImage();
 				double sum = 0.0;
@@ -60,8 +57,7 @@ public class IntensityFeatures extends FeatureClass {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 
 			@Override
-			public double calculate(PersistentObject po) {
-				TrackedNode node = new TrackedNode(tg.getNet(), po);
+			public double calculate(TrackedNode node) {
 				ImgPlusValue<? extends RealType<?>> img = node
 						.getSegmentImage();
 				double sum = 0.0;
@@ -84,8 +80,7 @@ public class IntensityFeatures extends FeatureClass {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 
 			@Override
-			public double calculate(PersistentObject po) {
-				TrackedNode node = new TrackedNode(tg.getNet(), po);
+			public double calculate(TrackedNode node) {
 				ImgPlusValue<? extends RealType<?>> img = node
 						.getSegmentImage();
 				double sum = 0.0;

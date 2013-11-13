@@ -2,6 +2,7 @@ package org.knime.knip.tracking.data.features;
 
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
+import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.network.core.algorithm.search.dfs.WeakConnectedComponent;
 import org.knime.network.core.api.KPartiteGraph;
@@ -31,13 +32,15 @@ public abstract class FeatureClass {
 					.createComponentViews(new ExecutionMonitor(), tg.getNet())) {
 				double fpsum = 0.0;
 				for (PersistentObject po : cc.getNodes(firstPartition)) {
-					double newNumber = calc.calculate(po);
+					TrackedNode node = new TrackedNode(tg.getNet(), po);
+					double newNumber = calc.calculate(node);
 					fpsum = calc.sum(fpsum, newNumber);
 				}
 
 				double lpsum = 0.0;
 				for (PersistentObject po : cc.getNodes(lastPartition)) {
-					double newNumber = calc.calculate(po);
+					TrackedNode node = new TrackedNode(tg.getNet(), po);
+					double newNumber = calc.calculate(node);
 					lpsum = calc.sum(lpsum, newNumber);
 				}
 
@@ -61,7 +64,7 @@ public abstract class FeatureClass {
 			return lpsum - fpsum;
 		}
 
-		public abstract double calculate(PersistentObject po);
+		public abstract double calculate(TrackedNode node);
 	}
 
 	protected static double traverseConnectedDiffMV(TransitionGraph tg,
@@ -79,7 +82,8 @@ public abstract class FeatureClass {
 				int count = 0;
 				double[] fpsum = null;
 				for (PersistentObject po : cc.getNodes(firstPartition)) {
-					double[] newNumber = calc.calculate(po);
+					TrackedNode node = new TrackedNode(tg.getNet(), po);
+					double[] newNumber = calc.calculate(node);
 					fpsum = calc.sum(fpsum, newNumber);
 					count++;
 				}
@@ -93,7 +97,8 @@ public abstract class FeatureClass {
 				count = 0;
 				double[] lpsum = null;
 				for (PersistentObject po : cc.getNodes(lastPartition)) {
-					double[] newNumber = calc.calculate(po);
+					TrackedNode node = new TrackedNode(tg.getNet(), po);
+					double[] newNumber = calc.calculate(node);
 					lpsum = calc.sum(lpsum, newNumber);
 				}
 
@@ -141,6 +146,6 @@ public abstract class FeatureClass {
 			return dist;
 		}
 
-		public abstract double[] calculate(PersistentObject po);
+		public abstract double[] calculate(TrackedNode node);
 	}
 }

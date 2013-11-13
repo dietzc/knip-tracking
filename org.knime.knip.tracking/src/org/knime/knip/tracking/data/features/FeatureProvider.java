@@ -20,10 +20,12 @@ public class FeatureProvider {
 		// addFeatureClass(TransitionFeatures.class);
 		// addFeatureClass(IntensityFeatures.class);
 
-		addFeatureClass(PositionFeatures.class);
-		addFeatureClass(IntensityFeatures.class);
-		addFeatureClass(ShapeFeatures.class);
-		addFeatureClass(OtherFeatures.class);
+//		addFeatureClass(PositionFeatures.class);
+//		addFeatureClass(IntensityFeatures.class);
+//		addFeatureClass(ShapeFeatures.class);
+//		addFeatureClass(OtherFeatures.class);
+		
+		addFeatureClass(ObjectFeatures.class);
 	}
 
 	public static double[] getFeatureVector(TransitionGraph tg) {
