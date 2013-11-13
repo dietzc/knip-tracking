@@ -1,6 +1,7 @@
 package org.knime.knip.tracking.data.features;
 
 import java.awt.geom.Rectangle2D;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -324,7 +325,7 @@ public class ObjectFeatures extends FeatureClass {
      * [1] Variance of intensity distribution
      * [2] Skew of Intensity distribution
      * [3] Kurtosis of Intensity distribution
-     * [4] Kurtosis of Intensity distribution
+     * [4] Sum of Intensity
      */
 	@Feature(name ="ObjectIntensity")
 	public static double intensity(TransitionGraph tg) {
@@ -334,10 +335,117 @@ public class ObjectFeatures extends FeatureClass {
 			public double[] calculate(TrackedNode node) {
 				double[] res = new double[5];
 				
+				double mean = 0;
+				int count  = 0;
+				
+				for(RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
+					mean += pixel.getRealDouble();
+					count++;
+				}
+				mean /= count;
+				
+				double var = 0;
+				double skew = 0;
+				double kurt = 0;
+				
+				for(RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
+					double delta = pixel.getRealDouble() - mean;
+					var += delta * delta;
+					skew += delta*delta*delta;
+					kurt += delta*delta*delta*delta;
+				}
+				res[0] = mean;
+				res[1] = var/count;
+				res[2] = skew / count / Math.pow(var, 3./2.);
+				res[3] = kurt / count / (var*var);
+				//mean * count = sum
+				res[4] = mean * count;
 				return res;
 			}
 		});
 	}
+	
+	/** Minimum/Maximum Intensity feature
+     * Find the minimum and the maximum intensity of a object and find the
+     * quantiles of the intensity distribution.
+     * Output stucture:
+     * size = 9
+     * [0] Minimum intensity
+     * [1] Maximum intensity
+     * [2] 5% quantile
+     * [3] 10% quantile
+     * [4] 25% quantile
+     * [5] 50% quantile
+     * [6] 75% quantile
+     * [7] 90% quantile
+     * [8] 95% quantile
+     */
+	@Feature(name="ObjectMinMaxIntensity")
+	public static double minMaxIntensity(TransitionGraph tg) {
+		return traverseConnectedDiffMV(tg, new CalculationMV() {
+			
+			@Override
+			public double[] calculate(TrackedNode node) {
+				List<Double> pixels = new LinkedList<Double>();
+				double min = Double.MAX_VALUE;
+				double max = 0;
+				for(RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
+					pixels.add(pixel.getRealDouble());
+					min = Math.min(min, pixel.getRealDouble());
+					max = Math.max(max, pixel.getRealDouble());
+				}
+				int size = pixels.size();
+				Collections.sort(pixels);
+				double[] res = new double[9];
+				res[0] = min;
+				res[1] = max;
+				res[2] = pixels.get((int)Math.floor(0.05*size));
+				res[3] = pixels.get((int)Math.floor(0.1*size));
+				res[4] = pixels.get((int)Math.floor(0.25*size));
+				res[5] = pixels.get((int)Math.floor(0.5*size));
+				res[6] = pixels.get((int)Math.floor(0.75*size));
+				res[7] = pixels.get((int)Math.floor(0.90*size));
+				res[8] = pixels.get((int)Math.floor(0.95*size));
+				return res;
+			}
+		});
+	}
+	
+	/** Maximum Intensity feature
+     * Find the maximum intensity of a object.
+     * Output stucture:
+     * size = N+1
+     * [0] Maximum intensity
+     * [1 .. N] coordinates of max. intensity
+     */
+	@Feature(name = "ObjectMaxIntensity")
+	public static double maxIntensity(TransitionGraph tg) {
+		return traverseConnectedDiffMV(tg, new CalculationMV() {
+			
+			@Override
+			public double[] calculate(TrackedNode node) {
+				Cursor<? extends RealType<?>> cursor = node.getSegmentImage().getImgPlus().localizingCursor();
+				int noDims = cursor.numDimensions();
+				int[] coords = new int[noDims];
+				double max = 0;
+				while(cursor.hasNext()) {
+					double value = cursor.next().getRealDouble();
+					if(value > max) {
+						max = value;
+						cursor.localize(coords);
+					}
+				}
+				double[] res = new double[noDims+1];
+				res[0] = max;
+				for(int d = 0; d < noDims; d++) {
+					res[d] = coords[d];
+				}
+				return res;
+			}
+		});
+	}
+	
+	//TODO: ObjectPairwise -> deprecated ?
 
 	@Feature(name = "ObjectFeatureBorderDistance")
 	public static double distanceToBorder(final TransitionGraph tg) {
