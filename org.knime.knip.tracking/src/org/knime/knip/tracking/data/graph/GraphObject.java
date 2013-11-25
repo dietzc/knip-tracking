@@ -45,7 +45,9 @@ public abstract class GraphObject {
 			return result;
 		} catch (InvalidFeatureException e) {
 			// assume the guy knows what he does..
+			//e.printStackTrace();
 		} catch (PersistenceException e) {
+			//e.printStackTrace();
 		}
 		return Double.NaN;
 	}

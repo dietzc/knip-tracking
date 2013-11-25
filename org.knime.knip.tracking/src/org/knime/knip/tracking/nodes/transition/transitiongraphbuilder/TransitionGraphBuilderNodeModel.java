@@ -265,10 +265,13 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 				// }
 			}
 
+			Set<TrackedNode> alreadyUsedNodes = new HashSet<TrackedNode>();
 			// nodes in second partition without possible match in first, create
 			// transition
 			for (TrackedNode node : unusedNodes) {
 				exec.checkCanceled();
+				//ignore nodes already used now
+				if(alreadyUsedNodes.contains(node)) continue;
 				TransitionGraph tg = new TransitionGraph();
 				// add both partitions - needed for 0->1 and 1 -> 0 graphs
 				tg.addPartition(tree.firstElement().getPartition());
@@ -282,7 +285,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 						continue;
 					if (node.distanceTo(node2) < m_distance.getDoubleValue()) {
 						node2.createCopyIn(tg);
-						unusedNodes.remove(node2);
+						alreadyUsedNodes.add(node);
 					}
 				}
 				count++;

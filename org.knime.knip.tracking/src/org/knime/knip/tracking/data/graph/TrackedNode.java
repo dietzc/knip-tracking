@@ -60,7 +60,7 @@ public class TrackedNode extends GraphObject implements
 			point = new RealPoint(x, y, z);
 		else if (!Double.isNaN(z) && !Double.isNaN(time))
 			point = new RealPoint(x, y, z, time);
-
+		
 		frame = point.getDoublePosition(point.numDimensions() - 1);
 	}
 
@@ -93,10 +93,10 @@ public class TrackedNode extends GraphObject implements
 	 * @return the copy of target.
 	 */
 	public TrackedNode createCopyIn(TransitionGraph target) {
+		System.out.println("Copying node " + getID());
 		try {
 			// create node in net, but do not add to graph yet
-			TrackedNode node = target.createNode(this.getID(), false);
-			PersistentObject targetnode = node.getPersistentObject();
+			PersistentObject targetnode = target.getNet().createNode(this.getID());
 			for (Feature feature : this.getNetwork().getFeatures()) {
 				Object value = this.getNetwork().getFeatureValue(
 						this.getPersistentObject(), feature);
@@ -105,9 +105,11 @@ public class TrackedNode extends GraphObject implements
 					target.getNet().defineFeature(feature);
 					target.getNet().addFeature(targetnode, feature.getName(),
 							value);
+					//System.out.println("adding feature " + feature.getName() + " with value " + value + " to " + targetnode.getId());
 				}
 			}
-			// now with all features node could finally be added
+			// now with all features tracked node could finally be created and added
+			TrackedNode node = target.createNode(this.getID(), true);
 			target.addNode(node);
 			return node;
 		} catch (Exception e) {
