@@ -17,7 +17,7 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.distmatrix.type.DistanceVectorDataCellFactory;
-import org.knime.knip.base.node.NodeTools;
+import org.knime.knip.base.node.NodeUtils;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.network.core.knime.cell.GraphCell;
 import org.knime.network.core.knime.cell.GraphCellFactory;
@@ -51,7 +51,7 @@ public class TransitionGraphs2DistanceMatrixNodeModel extends NodeModel {
 	@Override
 	protected BufferedDataTable[] execute(BufferedDataTable[] inData,
 			ExecutionContext exec) throws Exception {
-		int graphColumnIndex = NodeTools.firstCompatibleColumn(inData[0]
+		int graphColumnIndex = NodeUtils.firstCompatibleColumn(inData[0]
 				.getDataTableSpec(), GraphCellFactory.getType()
 				.getPreferredValueClass());
 

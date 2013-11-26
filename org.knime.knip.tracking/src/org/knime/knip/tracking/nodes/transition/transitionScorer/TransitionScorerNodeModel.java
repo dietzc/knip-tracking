@@ -18,7 +18,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.knip.base.node.NodeTools;
+import org.knime.knip.base.node.NodeUtils;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.network.core.knime.cell.GraphValue;
 
@@ -46,7 +46,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 
 		String currentTgId = "";
 		Set<TransitionGraph> graphs = new HashSet<TransitionGraph>();
-		int tgIndex = NodeTools.firstCompatibleColumn(
+		int tgIndex = NodeUtils.firstCompatibleColumn(
 				inData[0].getDataTableSpec(), GraphValue.class);
 
 		DataContainer cont = new DataContainer(createOutspec());

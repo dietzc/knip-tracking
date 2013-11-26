@@ -82,7 +82,7 @@ import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.base.data.labeling.LabelingCell;
 import org.knime.knip.base.data.labeling.LabelingCellFactory;
-import org.knime.knip.base.node.NodeTools;
+import org.knime.knip.base.node.NodeUtils;
 import org.knime.knip.core.awt.labelingcolortable.DefaultLabelingColorTable;
 import org.knime.knip.core.data.img.DefaultLabelingMetadata;
 import org.knime.knip.core.util.ImgUtils;
@@ -170,7 +170,7 @@ public class HeldReaderNodeModel<T extends RealType<T>> extends NodeModel {
 
 		if (m_imgColIdx == -1) {
 
-			if ((m_imgColIdx = NodeTools.silentOptionalAutoColumnSelection(
+			if ((m_imgColIdx = NodeUtils.silentOptionalAutoColumnSelection(
 					inData[0].getDataTableSpec(), m_smImgCol,
 					ImgPlusValue.class)) >= 0) {
 				setWarningMessage("Auto-configure Column: "

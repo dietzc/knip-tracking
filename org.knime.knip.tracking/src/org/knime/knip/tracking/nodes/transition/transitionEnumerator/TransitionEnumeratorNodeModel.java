@@ -25,7 +25,7 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
-import org.knime.knip.base.node.NodeTools;
+import org.knime.knip.base.node.NodeUtils;
 import org.knime.knip.tracking.data.features.FeatureProvider;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
@@ -58,7 +58,7 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 		DataContainer cont = exec.createDataContainer(inData[0]
 				.getDataTableSpec());
 
-		int graphColIdx = NodeTools.autoColumnSelection(inData[0]
+		int graphColIdx = NodeUtils.autoColumnSelection(inData[0]
 				.getDataTableSpec(), new SettingsModelString("bla", null),
 				GraphValue.class, this.getClass(), new Integer[0]);
 
