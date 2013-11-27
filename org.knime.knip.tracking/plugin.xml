@@ -27,12 +27,9 @@
 <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionEnumerator.TransitionEnumeratorNodeFactory"/>
 <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.transitionScorer.TransitionScorerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.transitionScorer.TransitionScorerNodeFactory"/>
 <node category-path="/community/knip/trackingrevised" factory-class="org.knime.knip.tracking.nodes.transition.hungarian.HungarianOptimizerNodeFactory" id="org.knime.knip.trackingrevised.nodes.transition.hungarian.HungarianOptimizerNodeFactory"/>
-<node
-      category-path="/community/knip/trackingrevised"
-      expert-flag="false"
-      factory-class="org.knime.knip.tracking.trackmate.LAPTrackletCreatorNodeFactory"
-      id="org.knime.knip.trackingrevised.trackmate.LAPTrackletCreatorNodeFactory">
+<node category-path="/community/knip/trackingrevised" expert-flag="false" factory-class="org.knime.knip.tracking.trackmate.LAPTrackletCreatorNodeFactory" id="org.knime.knip.trackingrevised.trackmate.LAPTrackletCreatorNodeFactory">
 </node>
+<node category-path="/" factory-class="org.knime.knip.tracking.nodes.transition.structsvm.TransitionGraphStructSVMNodeFactory" id="org.knime.knip.tracking.nodes.transition.structsvm.TransitionGraphStructSVMNodeFactory"/>
 </extension>
    <extension point="org.knime.network.core.FeatureType">
       <FeatureType FeatureType="org.knime.knip.tracking.data.FeatureTypeImgPlusCell">

@@ -17,6 +17,7 @@ import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.network.core.core.exception.PersistenceException;
 
+@Deprecated
 public class TransitionFeatures extends FeatureClass {
 
 	@Override

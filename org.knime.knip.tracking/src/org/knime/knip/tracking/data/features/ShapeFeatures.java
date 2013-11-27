@@ -14,6 +14,7 @@ import net.imglib2.type.numeric.RealType;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 
+@Deprecated
 public class ShapeFeatures extends FeatureClass {
 
 	@Override

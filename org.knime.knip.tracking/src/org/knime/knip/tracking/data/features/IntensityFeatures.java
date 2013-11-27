@@ -8,6 +8,7 @@ import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 
+@Deprecated
 public class IntensityFeatures extends FeatureClass {
 	@Override
 	public String getName() {
