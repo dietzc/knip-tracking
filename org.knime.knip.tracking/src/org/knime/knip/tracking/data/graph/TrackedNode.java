@@ -93,7 +93,7 @@ public class TrackedNode extends GraphObject implements
 	 * @return the copy of target.
 	 */
 	public TrackedNode createCopyIn(TransitionGraph target) {
-		System.out.println("Copying node " + getID());
+		//System.out.println("Copying node " + getID());
 		try {
 			// create node in net, but do not add to graph yet
 			PersistentObject targetnode = target.getNet().createNode(this.getID());
@@ -110,7 +110,6 @@ public class TrackedNode extends GraphObject implements
 			}
 			// now with all features tracked node could finally be created and added
 			TrackedNode node = target.createNode(this.getID(), true);
-			target.addNode(node);
 			return node;
 		} catch (Exception e) {
 			e.printStackTrace();

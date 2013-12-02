@@ -210,8 +210,6 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 			while (!queue.isEmpty()) {
 				exec.checkCanceled();
 				TrackedNode node = queue.poll();
-				if (node.getID().equals("113"))
-					System.out.println("----113----");
 				if (usedSegments.contains(node))
 					continue;
 				count++;
@@ -226,9 +224,9 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 				tg.addPartition(nextTree.firstElement().getPartition());
 				createTransitionGraph(tree, nextTree, tg, node,
 						m_distance.getDoubleValue(), usedSegments);
-				// System.out.println(tg + " " +
-				// tg.getNodes(tg.getFirstPartition()) + " " +
-				// tg.getNodes(tg.getLastPartition()));
+//				 System.out.println(tg + " " +
+//				 tg.getNodes(tg.getFirstPartition()) + " " +
+//				 tg.getNodes(tg.getLastPartition()));
 
 				unusedNodes.removeAll(tg.getNodes(tg.getLastPartition()));
 
