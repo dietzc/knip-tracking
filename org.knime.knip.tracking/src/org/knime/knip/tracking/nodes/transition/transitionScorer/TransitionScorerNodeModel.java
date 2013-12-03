@@ -61,7 +61,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 				} else {
 					if (graphs.size() > 0) {
 						//TransitionGraph tg = merge(graphs);
-						System.out.println("adding " + currentTgId);
+						System.out.println("adding [regular]" + currentTgId);
 						cont.addRowToTable(new DefaultRow(currentTgId, new DataCell[0]));
 					}
 					currentTgId = tgId;
@@ -70,14 +70,8 @@ public class TransitionScorerNodeModel extends NodeModel {
 					graphs.add(new TransitionGraph(((GraphValue) row
 							.getCell(tgIndex)).getView()));
 				}
-				if (graphs.size() > 0) {
-					// TODO unused
-					//TransitionGraph tg = merge(graphs);
-					cont.addRowToTable(new DefaultRow(tgId, new DataCell[0]));
-				}
-
 			} else {
-				System.out.println("adding " + row.getKey());
+				System.out.println("adding [else] " + row.getKey());
 				cont.addRowToTable(new DefaultRow(row.getKey(), new DataCell[0]));
 			}
 		}
@@ -85,7 +79,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 		//add last tg
 		if (graphs.size() > 0) {
 //			TransitionGraph tg = merge(graphs);
-			System.out.println("adding " + currentTgId);
+			System.out.println("adding [last]" + currentTgId);
 			cont.addRowToTable(new DefaultRow(currentTgId, new DataCell[0]));
 		}
 		cont.close();
