@@ -1,6 +1,8 @@
 package org.knime.knip.tracking.nodes.trackletnetwork2labeling;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
@@ -74,32 +76,56 @@ public class TrackletNetwork2LabelingNodeModel extends
 
 		RandomAccess<LabelingType<String>> resRA = res.randomAccess();
 
-		net = new GraphFilter(exec, net, null, null,
-				TrackingConstants.DISTANCE_EDGE_PARTITION);
+		if (net.getPartition(TrackingConstants.DISTANCE_EDGE_PARTITION) != null) {
+			// remove edges only containing distance information
+			net = new GraphFilter(exec, net, null, null,
+					TrackingConstants.DISTANCE_EDGE_PARTITION);
+		}
 
 		WeakConnectedComponent wcc = new WeakConnectedComponent(exec, net);
 		wcc.start(exec);
 
-		// from time to time to simplify traversing
+		int trackNoCounter = 0;
+
+		boolean trackletMode = false;
+		if (net.isFeatureDefined(TrackingConstants.FEATURE_TRACKLETSTARTNODE))
+			trackletMode = true;
+		Map<String, String> labelMap = new HashMap<String, String>();
+
 		for (PersistentObject node : net.getNodes()) {
 			String componentStart = wcc.getComponent(node.getId());
 
-			String trackletStartNode = componentStart;
-			String temp = trackletStartNode;
-			while ((temp = net.getStringFeature(net.getNode(temp),
-					TrackingConstants.FEATURE_TRACKLETSTARTNODE)) != null) {
-				trackletStartNode = temp;
-				exec.checkCanceled();
-			}
+			String label = "Track ";
 
-			String label = "Track " + trackletStartNode;
+			if (trackletMode) {
+				String trackletStartNode = componentStart;
+				String temp = trackletStartNode;
+				while ((temp = net.getStringFeature(net.getNode(temp),
+						TrackingConstants.FEATURE_TRACKLETSTARTNODE)) != null) {
+					trackletStartNode = temp;
+					exec.checkCanceled();
+				}
 
-			if (net.isFeatureDefined(TrackingConstants.FEATURE_TRACKLET_NUMBER)
-					&& net.getIntegerFeature(net.getNode(trackletStartNode),
-							TrackingConstants.FEATURE_TRACKLET_NUMBER) == -1) {
-				// ignore false positives
-				// continue;
-				label = "false positive";
+				label = "Track " + trackletStartNode;
+
+				if (net.isFeatureDefined(TrackingConstants.FEATURE_TRACKLET_NUMBER)
+						&& net.getIntegerFeature(
+								net.getNode(trackletStartNode),
+								TrackingConstants.FEATURE_TRACKLET_NUMBER) == -1) {
+					// ignore false positives
+					// continue;
+					label = "false positive";
+				}
+			} else {
+				// no tracklet network - general version
+				label += "" + trackNoCounter;
+				String tmp = labelMap.get(componentStart);
+				if (tmp == null) {
+					labelMap.put(componentStart, label);
+				} else {
+					label = tmp;
+				}
+				trackNoCounter++;
 			}
 
 			drawNodes(net, node, resRA, fileStoreFactory, res, label);
@@ -112,7 +138,8 @@ public class TrackletNetwork2LabelingNodeModel extends
 		String rowKey = net.getFeatureString(net,
 				TrackingConstants.NETWORK_FEATURE_IMAGE_ROWKEY);
 		n.setName(rowKey);
-		LabelingMetadata mdata = new DefaultLabelingMetadata(dims.length, new DefaultLabelingColorTable());
+		LabelingMetadata mdata = new DefaultLabelingMetadata(dims.length,
+				new DefaultLabelingColorTable());
 		mdata.setSource(new DefaultSourced().getSource());
 
 		// mdata.setAxis(Axes.get("X"), 0);
