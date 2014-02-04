@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.imglib2.Cursor;
 import net.imglib2.Point;
@@ -21,6 +23,7 @@ import net.imglib2.type.numeric.integer.UnsignedIntType;
 
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
+import org.knime.core.util.Pair;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.tracking.util.OffsetHandling;
 import org.knime.knip.tracking.util.PartitionComparatorString;
@@ -656,11 +659,11 @@ public class TransitionGraph {
 
 	public void setImageOffsets(long[] offsets) {
 		try {
-			if (!net.isFeatureDefined(TrackingConstants.NETWORK_FEATURE_DIMENSION)) {
+			if (!net.isFeatureDefined(TrackingConstants.FEATURE_BITMASK_OFFSET)) {
 				net.defineFeature(FeatureTypeFactory.getStringType(),
-						TrackingConstants.NETWORK_FEATURE_DIMENSION);
+						TrackingConstants.FEATURE_BITMASK_OFFSET);
 			}
-			net.addFeature(net, TrackingConstants.NETWORK_FEATURE_DIMENSION,
+			net.addFeature(net, TrackingConstants.FEATURE_BITMASK_OFFSET,
 					OffsetHandling.encode(offsets));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -671,7 +674,7 @@ public class TransitionGraph {
 		String encoded;
 		try {
 			encoded = net.getFeatureString(net,
-					TrackingConstants.NETWORK_FEATURE_DIMENSION);
+					TrackingConstants.FEATURE_BITMASK_OFFSET);
 			return OffsetHandling.decode(encoded);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -688,11 +691,21 @@ public class TransitionGraph {
 		int partIdx = 0;
 		for (String partition : partitions) {
 			if (!nodes.get(partition).isEmpty()) {
-				return nodes.get(getFirstPartition()).iterator().next().frame()
+				return nodes.get(partition).iterator().next().frame()
 						- partIdx;
 			}
 			partIdx++;
 		}
 		return 0;
+	}
+
+	public Pair<Integer, Integer> getPairing() {
+		Set<TrackedNode> from = new HashSet<TrackedNode>();
+		Set<TrackedNode> to = new HashSet<TrackedNode>();
+		for(Edge edge : edges) {
+			from.add(edge.getStartNode());
+			to.add(edge.getEndNode());
+		}
+		return new Pair<Integer, Integer>(from.size(), to.size());
 	}
 }

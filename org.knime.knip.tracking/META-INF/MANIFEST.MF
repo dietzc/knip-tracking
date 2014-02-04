@@ -9,17 +9,17 @@ Bundle-ClassPath: knip-tracking.jar,
  lib/jama-1.0.2.jar,
  lib/TrackMate_-2.1.1-SNAPSHOT.jar,
  lib/legacy-imglib1-2.0.0-20130818.134407-7.jar
-Bundle-Activator: org.knime.knip.tracking.TrackletCreatorNodePlugin
+Bundle-Activator: org.knime.knip.tracking.TrackingNodePlugin
 Bundle-Vendor: Christian Dietz / Stephan Sellien
 Require-Bundle: org.eclipse.core.runtime,
  org.knime.workbench.core;bundle-version="[2.8.0,3.0.0)",
  org.knime.workbench.repository;bundle-version="[2.8.0,3.0.0)",
  org.knime.base;bundle-version="[2.8.0,3.0.0)",
- org.knime.knip.base;bundle-version="[1.1.0,1.1.1)",
- org.knime.knip.core;bundle-version="[1.1.0,1.1.1)",
+ org.knime.knip.base;bundle-version="1.1.0",
+ org.knime.knip.core;bundle-version="1.1.0",
  org.knime.network.base;bundle-version="[2.8.0,3.0.0)",
  org.knime.network.core;bundle-version="[2.8.0,3.0.0)",
- org.knime.distmatrix;bundle-version="[2.8.0,3.0.0)"
+ org.knime.distmatrix;bundle-version="2.8.0"
 Bundle-ActivationPolicy: lazy
 Export-Package: org.knime.knip.tracking.data,
  org.knime.knip.tracking.data.graph,

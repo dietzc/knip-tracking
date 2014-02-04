@@ -15,14 +15,14 @@ import org.osgi.framework.BundleContext;
  * 
  * @author Stephan Sellien
  */
-public class TrackletCreatorNodePlugin extends Plugin {
+public class TrackingNodePlugin extends Plugin {
 	// The shared instance.
-	private static TrackletCreatorNodePlugin plugin;
+	private static TrackingNodePlugin plugin;
 
 	/**
 	 * The constructor.
 	 */
-	public TrackletCreatorNodePlugin() {
+	public TrackingNodePlugin() {
 		super();
 		plugin = this;
 	}
@@ -60,7 +60,7 @@ public class TrackletCreatorNodePlugin extends Plugin {
 	 * 
 	 * @return Singleton instance of the Plugin
 	 */
-	public static TrackletCreatorNodePlugin getDefault() {
+	public static TrackingNodePlugin getDefault() {
 		return plugin;
 	}
 

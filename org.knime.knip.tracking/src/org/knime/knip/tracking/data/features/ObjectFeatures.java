@@ -257,7 +257,7 @@ public class ObjectFeatures extends FeatureClass {
 					}
 				}
 
-				//ignore empty bitmasks
+				// ignore empty bitmasks
 				if (count <= 0)
 					return res;
 
@@ -469,8 +469,17 @@ public class ObjectFeatures extends FeatureClass {
 	public static double overlapBorder(final TransitionGraph tg) {
 		return traverseConnectedDiffSV(tg, new CalculationSV() {
 
-			@Override
 			public double calculate(TrackedNode node) {
+				try {
+					return calculateInt(node);
+				} catch (Throwable th) {
+					System.out.println(th);
+					th.printStackTrace();
+					return calculateInt(node);
+				}
+			}
+
+			public double calculateInt(TrackedNode node) {
 				Rectangle2D rect = node.getImageRectangle();
 				try {
 					long[] imgDims = OffsetHandling.decode(tg
@@ -479,38 +488,38 @@ public class ObjectFeatures extends FeatureClass {
 									TrackingConstants.NETWORK_FEATURE_DIMENSION));
 					int count = 0;
 					List<Cursor<BitType>> list = new LinkedList<Cursor<BitType>>();
+
+					long width = (long) rect.getWidth() - 1;
+					long heigth = (long) rect.getHeight() - 1;
+
 					if (rect.getMinX() == 0) {
 						// left border
 						BresenhamLine<BitType> cursor = new BresenhamLine<BitType>(
 								node.getBitmask().getImgPlus(), new Point(0L,
-										0L),
-								new Point(0, (long) rect.getMinY()));
+										0L, 0L), new Point(0, heigth, 0L));
 						list.add(cursor);
 					}
 					if (rect.getMinY() == 0) {
 						// upper border
 						BresenhamLine<BitType> cursor = new BresenhamLine<BitType>(
 								node.getBitmask().getImgPlus(), new Point(0L,
-										0L), new Point((long) rect.getMaxX(),
-										0L));
+										0L, 0L), new Point(width, 0L, 0L));
 						list.add(cursor);
 					}
 					if (imgDims[0] - rect.getMaxX() == 0) {
 						// right border
 						BresenhamLine<BitType> cursor = new BresenhamLine<BitType>(
 								node.getBitmask().getImgPlus(), new Point(
-										(long) rect.getMaxX(), 0L), new Point(
-										(long) rect.getMaxX(), (long) rect
-												.getMaxY()));
+										width, 0L, 0L), new Point(width,
+										heigth, 0L));
 						list.add(cursor);
 					}
 					if (imgDims[1] - rect.getMinY() == 0) {
 						// lower border
 						BresenhamLine<BitType> cursor = new BresenhamLine<BitType>(
 								node.getBitmask().getImgPlus(), new Point(0L,
-										(long) rect.getMaxY()), new Point(
-										(long) rect.getMaxX(), (long) rect
-												.getMaxY()));
+										heigth, 0L), new Point(width, heigth,
+										0L));
 						list.add(cursor);
 					}
 					for (Cursor<BitType> cursor : list) {

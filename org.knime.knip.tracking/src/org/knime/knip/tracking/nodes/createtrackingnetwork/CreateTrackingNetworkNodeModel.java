@@ -242,9 +242,9 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 				.createNotInWorkflowFileStoreFactory();
 		double count = 1.0;
 		for (DataRow row : inDataAsBDT[0]) {
-			Integer label = Integer
-					.parseInt(((org.knime.core.data.StringValue) row
-							.getCell(labelIdx)).toString());
+			//TODO: was Integer!
+			String label = ((org.knime.core.data.StringValue) row
+							.getCell(labelIdx)).toString();
 			int t = (int) ((DoubleValue) row.getCell(timeIdx)).getDoubleValue();
 			// Partition
 			String partitionName = "t" + t;
@@ -281,7 +281,7 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 			ImgPlusCell<BitType> bitmaskCell = (ImgPlusCell<BitType>) row
 					.getCell(bitmaskIdx);
 			ImgPlus<T> cutImg = cutBitmask(
-					((ImgPlusValue<T>) imgcell).getImgPlus(), bitmaskCell);
+					((ImgPlusValue<T>) imgcell).getImgPlus(), bitmaskCell, t);
 //			if(count == 1) {
 //				AWTImageTools.showInFrame(((ImgPlusValue<T>) imgcell).getImgPlus(), "blubb!");
 //				AWTImageTools.showInFrame(cutImg, "bla");
@@ -300,16 +300,23 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 	}
 	
 	private ImgPlus<T> cutBitmask(ImgPlus<T> img,
-			ImgPlusCell<BitType> bitmaskCell) {
+			ImgPlusCell<BitType> bitmaskCell, int time) {
 		Img<T> resultImg = ImgUtils.<BitType, T> createEmptyCopy(bitmaskCell
 				.getImgPlus().getImg(), img.firstElement().createVariable());
 		long[] min = bitmaskCell.getMinimum();
 		long[] max = bitmaskCell.getMaximum();
-		//min contains offset, max does not!
-		for(int d = 0; d < min.length; d++) {
-			max[d] += min[d];
+		//is time index there?
+		if(resultImg.numDimensions() < img.numDimensions()) {
+			System.err.println("Dimensions do not match. Is input compatible?");
+			long[] tmp = new long[min.length +1];
+			System.arraycopy(min, 0, tmp, 0, min.length);
+			tmp[tmp.length-1] = time;
+			min = tmp;
+			System.arraycopy(max, 0, tmp, 0, max.length);
+			max = tmp;
 		}
-		System.out.println(Arrays.toString(min) + " " + Arrays.toString(max));
+		System.out.println(Arrays.toString(min) + " " + Arrays.toString(max) + "    img: " + img.dimension(0) + "x" + img.dimension(1));
+		System.out.println(img.min(0) + "," + img.min(1) + " to " + img.max(0) + "," + img.max(1));
 		IntervalView<T> iv = Views.interval(img, min, max);
 		Cursor<T> cursor = iv.cursor();
 		for(T pixel : resultImg) {

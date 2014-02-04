@@ -1,10 +1,10 @@
-package org.knime.knip.tracking.nodes.transition.structsvm;
+package org.knime.knip.tracking.nodes.labmerger;
 
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 
 /**
- * <code>NodeDialog</code> for the "TransitionGraphStructSVM" Node.
- * A struct SVM based classifier for transition graphs.
+ * <code>NodeDialog</code> for the "LabelingMerger" Node.
+ * Merges a table with labelings. * nSame labels in different labelings are seperated!
  *
  * This node dialog derives from {@link DefaultNodeSettingsPane} which allows
  * creation of a simple dialog with standard components. If you need a more 
@@ -13,12 +13,12 @@ import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
  * 
  * @author Stephan Sellien
  */
-public class TransitionGraphStructSVMNodeDialog extends DefaultNodeSettingsPane {
+public class LabelingMergerNodeDialog extends DefaultNodeSettingsPane {
 
     /**
-     * New pane for configuring the TransitionGraphStructSVM node.
+     * New pane for configuring the LabelingMerger node.
      */
-    protected TransitionGraphStructSVMNodeDialog() {
+    protected LabelingMergerNodeDialog() {
 
     }
 }

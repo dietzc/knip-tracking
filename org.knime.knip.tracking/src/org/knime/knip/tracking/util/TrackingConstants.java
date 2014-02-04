@@ -15,6 +15,7 @@ public interface TrackingConstants {
 	public final static String FEATURE_SEGMENT_IMG = "SegmentImg";
 
 	// network features
+	/** dimensions of original image */
 	public final static String NETWORK_FEATURE_DIMENSION = "nfImageDimension";
 	public final static String NETWORK_FEATURE_IMAGE_ROWKEY = "nfImageRowKey";
 	public final static String NETWORK_FEATURE_MAX_EUCLIDEAN_DISTANCE = "nfMaxEuclideanDistance";
@@ -24,6 +25,9 @@ public interface TrackingConstants {
 
 	// transition graph features
 	public final static String TRANSITION_GRAPH_FEATURE_OFFSET = "tgfOffset";
+
+	//coords of the center of a node in a rendered image
+	public static final String RENDERER_NODE_POSITION = "nodePositionInTransImg";
 
 	// Might become parameters in future
 	// Adjust distribution
@@ -40,5 +44,6 @@ public interface TrackingConstants {
 	
 	// name of the GAP partition
 	public static final String GAP_PARTITION_NAME = "gapPartition";
+	
 
 }

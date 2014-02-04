@@ -23,6 +23,11 @@ import org.knime.knip.core.ops.img.ImgPlusNormalize;
 import org.knime.knip.tracking.data.graph.Edge;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
+import org.knime.knip.tracking.util.OffsetHandling;
+import org.knime.knip.tracking.util.TrackingConstants;
+import org.knime.network.core.core.exception.InvalidFeatureException;
+import org.knime.network.core.core.exception.PersistenceException;
+import org.knime.network.core.core.feature.FeatureTypeFactory;
 
 public class TransitionGraphRenderer {
 
@@ -31,9 +36,13 @@ public class TransitionGraphRenderer {
 
 	/**
 	 * Renders a {@link TransitionGraph} to an {@link ImgPlus}.
-	 * @param base base graph (with surroundings)
-	 * @param baseImg original image as background
-	 * @param links {@link TransitionGraph} with edges to be drawn
+	 * 
+	 * @param base
+	 *            base graph (with surroundings)
+	 * @param baseImg
+	 *            original image as background
+	 * @param links
+	 *            {@link TransitionGraph} with edges to be drawn
 	 * @return a {@link ImgPlus}
 	 */
 	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> renderTransitionGraph(
@@ -65,10 +74,10 @@ public class TransitionGraphRenderer {
 			maxX = Math.min(baseImg.max(0), maxX + OVERVIEW_BORDER_SIZE);
 			maxY = Math.min(baseImg.max(1), maxY + OVERVIEW_BORDER_SIZE);
 
-//			System.out.print("Old rect: " + rect + " ");
+			// System.out.print("Old rect: " + rect + " ");
 			rect = new Rectangle2D.Double(minX, minY, maxX - minX + 1, maxY
 					- minY + 1);
-//			System.out.println(" new one: " + rect);
+			// System.out.println(" new one: " + rect);
 		}
 
 		int imgWidth = (int) rect.getWidth();
@@ -157,7 +166,7 @@ public class TransitionGraphRenderer {
 						// rectDiff[d] + " vs " + dim[d] + " [" + d + "]"));
 					}
 					// ra.get().setInteger(cursor.get().getInteger() * color);
-					//ra.get().setInteger(color);
+					// ra.get().setInteger(color);
 				}
 				color++;
 
@@ -169,6 +178,29 @@ public class TransitionGraphRenderer {
 				position.setPosition(
 						(int) (node.getDoublePosition(1) - rect.getMinY()), 1);
 				positions.put(node, position);
+				// add node position in graph to draw nodes easily on top.
+				try {
+					if (!links
+							.getNet()
+							.isFeatureDefined(
+									TrackingConstants.RENDERER_NODE_POSITION)) {
+						links.getNet()
+								.defineFeature(
+										FeatureTypeFactory.getStringType(),
+										TrackingConstants.RENDERER_NODE_POSITION);
+					}
+					long[] pos = new long[position.numDimensions()];
+					position.localize(pos);
+					links.getNet()
+							.addFeature(
+									node.getPersistentObject(),
+									TrackingConstants.RENDERER_NODE_POSITION,
+									OffsetHandling.encode(pos));
+				} catch (PersistenceException e) {
+					e.printStackTrace();
+				} catch (InvalidFeatureException e) {
+					e.printStackTrace();
+				}
 			}
 			partitionIndex++;
 		}
@@ -198,7 +230,7 @@ public class TransitionGraphRenderer {
 
 			Point p1 = positions.get(start);
 			Point p2 = positions.get(end);
-			
+
 			BresenhamLine<T> bl = new BresenhamLine<T>(img, p1, p2);
 			while (bl.hasNext()) {
 				T pixel = bl.next();
@@ -215,7 +247,7 @@ public class TransitionGraphRenderer {
 				new ValuePair<T, T>(zero, max), true);
 
 		ImgPlus<T> imgPlus = new ImgPlus<T>(img);
-		
+
 		imgNormalize.compute(imgPlus, imgPlus);
 
 		// safe offsets in TransitionGraph to ease orientation
@@ -223,6 +255,52 @@ public class TransitionGraphRenderer {
 				(long) rect.getMinY() });
 
 		return imgPlus;
+	}
+
+	/**
+	 * (Re-)Draws edges over an existing img.
+	 * 
+	 * @param img
+	 *            img containing the {@link TransitionGraph} rendered by
+	 *            {@link TransitionGraphRenderer#renderTransitionGraph(TransitionGraph, ImgPlus, TransitionGraph)}
+	 *            .
+	 * @param tg
+	 *            the according transition graph
+	 */
+	public static <T extends NativeType<T> & IntegerType<T>> ImgPlus<T> drawEdges(
+			ImgPlus<T> img, TransitionGraph tg) {
+		try {
+			if (!tg.getNet().isFeatureDefined(
+					TrackingConstants.RENDERER_NODE_POSITION)) {
+				System.out.println("Feature "
+						+ TrackingConstants.RENDERER_NODE_POSITION
+						+ " does not exist!");
+				return img;
+			}
+			for (Edge edge : tg.getEdges()) {
+				long[] startPos = OffsetHandling
+						.decode(edge
+								.getStartNode()
+								.getStringFeature(
+										TrackingConstants.RENDERER_NODE_POSITION));
+				long[] endPos = OffsetHandling
+						.decode(edge
+								.getEndNode()
+								.getStringFeature(
+										TrackingConstants.RENDERER_NODE_POSITION));
+				Point start = new Point(startPos);
+				Point end = new Point(endPos);
+
+				BresenhamLine<T> bl = new BresenhamLine<T>(img, start, end);
+				while (bl.hasNext()) {
+					T pixel = bl.next();
+					pixel.setInteger(150);
+				}
+			}
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		}
+		return img;
 	}
 
 }
