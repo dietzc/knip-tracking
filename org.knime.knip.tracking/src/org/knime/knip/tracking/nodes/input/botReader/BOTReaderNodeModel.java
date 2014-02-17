@@ -1,4 +1,4 @@
-package org.knime.knip.tracking.nodes.botReader;
+package org.knime.knip.tracking.nodes.input.botReader;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -118,18 +118,7 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 			String[] parts = line.trim().split(" -> ");
 			//System.out.println(Arrays.toString(parts));
 			try {
-				TransitionGraph tg = new TransitionGraph();
-				//add partitions for 0 -> 1 or 1 -> 0 tgs
-				tg.addPartition(t0.getId());
-				tg.addPartition(t1.getId());
-				//set img dimensions for feature calc
-				try {
-					String dimString = view.getStringFeature(view, TrackingConstants.NETWORK_FEATURE_DIMENSION);
-					tg.getNet().defineFeature(FeatureTypeFactory.getStringType(), TrackingConstants.NETWORK_FEATURE_DIMENSION);
-					tg.getNet().addFeature(tg.getNet(), TrackingConstants.NETWORK_FEATURE_DIMENSION, dimString);
-				} catch (InvalidFeatureException e) {
-					e.printStackTrace();
-				}
+				TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(view, t0, t1);
 				// from
 				String[] fromParts = parts[0].trim().split("\\s+");
 				List<TrackedNode> from = new LinkedList<TrackedNode>();

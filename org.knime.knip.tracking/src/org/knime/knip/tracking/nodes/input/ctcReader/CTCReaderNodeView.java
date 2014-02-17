@@ -1,4 +1,4 @@
-package org.knime.knip.tracking.nodes.botReader;
+package org.knime.knip.tracking.nodes.input.ctcReader;
 
 import org.knime.core.node.NodeView;
 
@@ -8,14 +8,14 @@ import org.knime.core.node.NodeView;
  *
  * @author Stephan Sellien
  */
-public class BOTReaderNodeView extends NodeView<BOTReaderNodeModel> {
+public class CTCReaderNodeView extends NodeView<CTCReaderNodeModel> {
 
     /**
      * Creates a new view.
      * 
-     * @param nodeModel The model (class: {@link BOTReaderNodeModel})
+     * @param nodeModel The model (class: {@link CTCReaderNodeModel})
      */
-    protected BOTReaderNodeView(final BOTReaderNodeModel nodeModel) {
+    protected CTCReaderNodeView(final CTCReaderNodeModel nodeModel) {
         super(nodeModel);
 
         // TODO instantiate the components of the view here.
@@ -30,8 +30,8 @@ public class BOTReaderNodeView extends NodeView<BOTReaderNodeModel> {
 
         // TODO retrieve the new model from your nodemodel and 
         // update the view.
-        BOTReaderNodeModel nodeModel = 
-            (BOTReaderNodeModel)getNodeModel();
+        CTCReaderNodeModel nodeModel = 
+            (CTCReaderNodeModel)getNodeModel();
         assert nodeModel != null;
         
         // be aware of a possibly not executed nodeModel! The data you retrieve

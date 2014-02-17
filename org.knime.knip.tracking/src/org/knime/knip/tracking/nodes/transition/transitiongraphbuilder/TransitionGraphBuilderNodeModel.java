@@ -36,6 +36,7 @@ import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
 import org.knime.knip.tracking.util.PartitionComparator;
+import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
@@ -96,23 +97,6 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 
 	}
 
-	private DataTableSpec createOutSpec() {
-		List<DataColumnSpec> cols = new LinkedList<DataColumnSpec>();
-		cols.add(new DataColumnSpecCreator("Image representation",
-				ImgPlusCell.TYPE).createSpec());
-		cols.add(new DataColumnSpecCreator("String representation",
-				StringCell.TYPE).createSpec());
-		cols.add(new DataColumnSpecCreator("Nodes/Partition", StringCell.TYPE)
-				.createSpec());
-		cols.add(new DataColumnSpecCreator("Transition graphs",
-				GraphCellFactory.getType()).createSpec());
-		for (String feature : FeatureProvider.getFeatureNames()) {
-			cols.add(new DataColumnSpecCreator(feature, DoubleCell.TYPE)
-					.createSpec());
-		}
-		return new DataTableSpec(cols.toArray(new DataColumnSpec[cols.size()]));
-	}
-
 	private void createTransitionGraph(KDTree<TrackedNode> tree,
 			KDTree<TrackedNode> nextTree, TransitionGraph graph, TrackedNode node,
 			double radius, Set<TrackedNode> usedSegments) {
@@ -163,7 +147,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 	protected BufferedDataTable execute(ExecutionContext exec,
 			KPartiteGraphView<PersistentObject, Partition> net,
 			BufferedDataTable table) throws Exception {
-		DataContainer cont = exec.createDataContainer(createOutSpec());
+		DataContainer cont = exec.createDataContainer(TransitionGraphUtil.createOutSpec());
 		List<Partition> partitions = new ArrayList<Partition>(
 				net.getPartitions(PartitionType.NODE));
 		Collections.sort(partitions, new PartitionComparator());
@@ -218,10 +202,10 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 				// List<Node> connectedNodes = getConnectedNodes(tree, nextTree,
 				// node, m_distance.getDoubleValue(), usedSegments);
 				// System.out.println(connectedNodes);
-				TransitionGraph tg = new TransitionGraph();
 				// add both partitions - needed for 0->1 and 1 -> 0 graphs
-				tg.addPartition(tree.firstElement().getPartition());
-				tg.addPartition(nextTree.firstElement().getPartition());
+				Partition t0 = net.getPartition(tree.firstElement().getPartition());
+				Partition t1 = net.getPartition(nextTree.firstElement().getPartition());
+				TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
 				createTransitionGraph(tree, nextTree, tg, node,
 						m_distance.getDoubleValue(), usedSegments);
 //				 System.out.println(tg + " " +
@@ -270,10 +254,10 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 				exec.checkCanceled();
 				//ignore nodes already used now
 				if(alreadyUsedNodes.contains(node)) continue;
-				TransitionGraph tg = new TransitionGraph();
 				// add both partitions - needed for 0->1 and 1 -> 0 graphs
-				tg.addPartition(tree.firstElement().getPartition());
-				tg.addPartition(nextTree.firstElement().getPartition());
+				Partition t0 = net.getPartition(tree.firstElement().getPartition());
+				Partition t1 = net.getPartition(nextTree.firstElement().getPartition());
+				TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
 				// add node
 				node.createCopyIn(tg);
 
@@ -287,19 +271,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 					}
 				}
 				count++;
-				DataCell[] cells = new DataCell[cont.getTableSpec()
-						.getNumColumns()];
-				cells[0] = new ImgPlusCellFactory(exec)
-						.createCell(TransitionGraphRenderer
-								.renderTransitionGraph(tg, baseImg, tg));
-				cells[1] = new StringCell(tg.toString());
-				cells[2] = new StringCell(tg.toNodeString());
-				cells[3] = GraphCellFactory.createCell(tg.getNet());
-				double[] distVec = FeatureProvider.getFeatureVector(tg);
-				for (int i = 0; i < distVec.length; i++) {
-					cells[i + 4] = new DoubleCell(distVec[i]);
-				}
-				cont.addRowToTable(new DefaultRow(p + "#" + count, cells));
+				cont.addRowToTable(new DefaultRow(p + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, exec)));
 			}
 
 			// System.out.println("unused nodes: " + unusedNodes);
@@ -311,6 +283,6 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 	@Override
 	protected DataTableSpec getTableSpec(GraphPortObjectSpec viewSpec,
 			DataTableSpec tableSpec) throws InvalidSettingsException {
-		return createOutSpec();
+		return TransitionGraphUtil.createOutSpec();
 	}
 }

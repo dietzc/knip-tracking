@@ -103,7 +103,7 @@ public class LabelingMergerNodeModel<L extends Comparable<L>, T extends IntegerT
 			Labeling<L> lab = ((LabelingValue<L>) row.getCell(labIdx)).getLabeling();
     		Map<L, String> labelMap = new HashMap<L, String>();
     		for(L label : lab.getLabels()) {
-    			String frame = row.getKey().getString().replace(".tiff", "");
+    			String frame = row.getKey().getString().replaceAll("\\D", ""); //remove nondigits
     			labelMap.put(label, frame + "_" + label.toString());
     		}
     		    		

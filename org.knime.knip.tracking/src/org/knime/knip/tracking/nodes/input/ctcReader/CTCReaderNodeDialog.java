@@ -1,4 +1,4 @@
-package org.knime.knip.tracking.nodes.botReader;
+package org.knime.knip.tracking.nodes.input.ctcReader;
 
 import javax.swing.JFileChooser;
 
@@ -17,16 +17,16 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
  * 
  * @author Stephan Sellien
  */
-public class BOTReaderNodeDialog extends DefaultNodeSettingsPane {
+public class CTCReaderNodeDialog extends DefaultNodeSettingsPane {
 
     /**
      * New pane for configuring TiffFolder2TransitionGraph node dialog.
      * This is just a suggestion to demonstrate possible default dialog
      * components.
      */
-    protected BOTReaderNodeDialog() {
+    protected CTCReaderNodeDialog() {
         super();
-        SettingsModelString folderStringModel = BOTReaderNodeModel.createFolderSetting();
+        SettingsModelString folderStringModel = CTCReaderNodeModel.createFolderSetting();
         addDialogComponent(new DialogComponentFileChooser(folderStringModel, "tiff2tgFolderSelector", JFileChooser.OPEN_DIALOG, true));
     }
 }

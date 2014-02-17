@@ -1,4 +1,4 @@
-package org.knime.knip.tracking.nodes.botReader;
+package org.knime.knip.tracking.nodes.input.ctcReader;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author Stephan Sellien
  */
-public class BOTReaderNodeFactory 
-        extends NodeFactory<BOTReaderNodeModel> {
+public class CTCReaderNodeFactory 
+        extends NodeFactory<CTCReaderNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public BOTReaderNodeModel createNodeModel() {
-        return new BOTReaderNodeModel();
+    public CTCReaderNodeModel createNodeModel() {
+        return new CTCReaderNodeModel();
     }
 
     /**
@@ -33,9 +33,9 @@ public class BOTReaderNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<BOTReaderNodeModel> createNodeView(final int viewIndex,
-            final BOTReaderNodeModel nodeModel) {
-        return new BOTReaderNodeView(nodeModel);
+    public NodeView<CTCReaderNodeModel> createNodeView(final int viewIndex,
+            final CTCReaderNodeModel nodeModel) {
+        return new CTCReaderNodeView(nodeModel);
     }
 
     /**
@@ -51,7 +51,7 @@ public class BOTReaderNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new BOTReaderNodeDialog();
+        return new CTCReaderNodeDialog();
     }
 
 }

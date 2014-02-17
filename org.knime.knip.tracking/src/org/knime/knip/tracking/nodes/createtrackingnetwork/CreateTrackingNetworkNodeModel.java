@@ -321,7 +321,8 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 		Cursor<T> cursor = iv.cursor();
 		for(T pixel : resultImg) {
 			cursor.next();
-			pixel.set(cursor.get());
+			T value = cursor.get();
+			pixel.set(value);
 		}
 		return new ImgPlus<T>(resultImg);
 	}

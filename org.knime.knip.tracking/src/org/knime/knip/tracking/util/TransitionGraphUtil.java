@@ -20,6 +20,10 @@ import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.tracking.data.features.FeatureProvider;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
+import org.knime.network.core.api.KPartiteGraphView;
+import org.knime.network.core.api.Partition;
+import org.knime.network.core.api.PersistentObject;
+import org.knime.network.core.core.feature.FeatureTypeFactory;
 import org.knime.network.core.knime.cell.GraphCellFactory;
 
 public class TransitionGraphUtil {
@@ -41,13 +45,12 @@ public class TransitionGraphUtil {
 	}
 
 	public static <T extends NativeType<T> & IntegerType<T>> DataCell[] transitionGraph2DataCells(
-			TransitionGraph tg, ImgPlus<T> baseImg,
-			ExecutionContext exec) {
+			TransitionGraph tg, ImgPlus<T> baseImg, ExecutionContext exec) {
 		DataCell[] cells = new DataCell[createOutSpec().getNumColumns()];
 		try {
 			cells[0] = new ImgPlusCellFactory(exec)
-					.createCell(TransitionGraphRenderer.renderTransitionGraph(tg,
-							baseImg, tg));
+					.createCell(TransitionGraphRenderer.renderTransitionGraph(
+							tg, baseImg, tg));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -59,5 +62,25 @@ public class TransitionGraphUtil {
 			cells[i + 4] = new DoubleCell(distVec[i]);
 		}
 		return cells;
+	}
+
+	public static TransitionGraph createTransitionGraphForNetwork(
+			KPartiteGraphView<PersistentObject, Partition> net, Partition t0,
+			Partition t1) {
+		try {
+			TransitionGraph tg = new TransitionGraph();
+			tg.addPartition(t0.getId());
+			tg.addPartition(t1.getId());
+			// set img dimensions for feature calc
+			String dimString = net.getStringFeature(net,
+					TrackingConstants.NETWORK_FEATURE_DIMENSION);
+			tg.getNet().defineFeature(FeatureTypeFactory.getStringType(),
+					TrackingConstants.NETWORK_FEATURE_DIMENSION);
+			tg.getNet().addFeature(tg.getNet(),
+					TrackingConstants.NETWORK_FEATURE_DIMENSION, dimString);
+			return tg;
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
