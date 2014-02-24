@@ -71,7 +71,10 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 		ImgPlus<T> baseImg = ((ImgPlusValue<T>) inData[1].iterator().next()
 				.getCell(0)).getImgPlus();
 
+		int count = 0;
 		for (DataRow row : inData[0]) {
+			exec.checkCanceled();
+			exec.setProgress((double)count/inData[0].getRowCount(), "Processing row #" + (count+1));
 			TransitionGraph tg = new TransitionGraph(
 					((GraphValue) row.getCell(graphColIdx)).getView());
 			int variantCounter = 0;
@@ -94,6 +97,7 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 						+ variantCounter, cells));
 				variantCounter++;
 			}
+			count++;
 		}
 
 		cont.close();
