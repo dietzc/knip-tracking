@@ -3,6 +3,7 @@ package org.knime.knip.tracking.data.graph.renderer;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import net.imglib2.Cursor;
 import net.imglib2.Point;
@@ -19,7 +20,9 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.knime.knip.base.data.img.ImgPlusValue;
+import org.knime.knip.core.features.seg.ExtractOutlineImg;
 import org.knime.knip.core.ops.img.ImgPlusNormalize;
+import org.knime.knip.core.util.ShowInSameFrame;
 import org.knime.knip.tracking.data.graph.Edge;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
@@ -33,7 +36,7 @@ public class TransitionGraphRenderer {
 
 	public static final int OVERVIEW_BORDER_SIZE = 50;
 	public static final int BORDER = 10;
-
+	
 	/**
 	 * Renders a {@link TransitionGraph} to an {@link ImgPlus}.
 	 * 
@@ -89,6 +92,7 @@ public class TransitionGraphRenderer {
 		Img<T> img = new ArrayImgFactory<T>().create(dim, baseImg
 				.firstElement().createVariable());
 		RandomAccess<T> ra = img.randomAccess();
+		
 
 		// copy original image for better overview to each partitions background
 		if (baseImg != null) {
@@ -169,6 +173,29 @@ public class TransitionGraphRenderer {
 					// ra.get().setInteger(color);
 				}
 				color++;
+				
+				//draw outline
+				ExtractOutlineImg outlineOp = new ExtractOutlineImg(true);
+				long[] outlineDim = new long[2];
+				outlineDim[0] = ip.dimension(0);
+				outlineDim[1] = ip.dimension(1);
+				Img<BitType> outline = new ArrayImgFactory<BitType>().create(outlineDim, new BitType());
+				cursor = outline.cursor();
+				for(BitType bt : ip) {
+					cursor.next();
+					cursor.get().set(bt);
+				}
+				outlineOp.compute(outline.copy(), outline);
+				cursor = outline.localizingCursor();
+				while(cursor.hasNext()) {
+					cursor.fwd();
+					if(!cursor.get().get()) continue; 
+					for(int d = 0; d < cursor.numDimensions(); d++) {
+						if(d == 2) continue;
+						ra.setPosition(cursor.getLongPosition(d) + rectDiff[d], d);
+					}
+					ra.get().setInteger(255);
+				}
 
 				// remember position for drawing edges later on
 				Point position = new Point(dim.length);
@@ -301,6 +328,27 @@ public class TransitionGraphRenderer {
 			e.printStackTrace();
 		}
 		return img;
+	}
+	
+	public static void main(String[] args) {
+		Img<BitType> img = new ArrayImgFactory<BitType>().create(new long[]{100,100}, new BitType());
+		RandomAccess<BitType> ra = img.randomAccess();
+		
+		Random rnd = new Random();
+		
+		//draw a filled rect
+		for(int y = 20; y < img.dimension(1) - 20; y++) {
+			for(int x = 20; x < img.dimension(0) - 20; x++) {
+				ra.setPosition(x, 0);
+				ra.setPosition(y, 1);
+				ra.get().set(rnd.nextDouble() < 0.1);
+			}
+		}
+		new ShowInSameFrame().show(img, 5);
+		Img<BitType> outline = img.copy();
+		ExtractOutlineImg outlineOp = new ExtractOutlineImg(true);
+		outlineOp.compute(outline.copy(), outline);
+		new ShowInSameFrame().show(outline, 5);
 	}
 
 }

@@ -33,6 +33,7 @@
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.input.ctcReader.CTCReaderNodeFactory" id="org.knime.knip.tracking.nodes.input.ctcReader.CTCReaderNodeFactory"/>
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.labmerger.LabelingMergerNodeFactory" id="org.knime.knip.tracking.nodes.labmerger.LabelingMergerNodeFactory"/>
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.transition.applytg.ApplyTransitionGraphsNodeFactory" id="org.knime.knip.tracking.nodes.transition.applytg.ApplyTransitionGraphsNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.tracking.nodes.tableCopy.TableCopyNodeFactory" id="org.knime.knip.tracking.nodes.tableCopy.TableCopyNodeFactory"/>
 </extension>
    <extension point="org.knime.network.core.FeatureType">
       <FeatureType FeatureType="org.knime.knip.tracking.data.FeatureTypeImgPlusCell">

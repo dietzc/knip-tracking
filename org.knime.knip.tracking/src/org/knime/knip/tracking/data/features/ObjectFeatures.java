@@ -16,6 +16,9 @@ import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.util.OffsetHandling;
 import org.knime.knip.tracking.util.TrackingConstants;
+import org.knime.network.core.api.KPartiteGraph;
+import org.knime.network.core.api.Partition;
+import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.exception.InvalidFeatureException;
 import org.knime.network.core.core.exception.PersistenceException;
 
@@ -456,9 +459,9 @@ public class ObjectFeatures extends FeatureClass {
 									imgDims[0] - rect.getMaxX(), imgDims[1]
 											- rect.getMaxY())));
 				} catch (InvalidFeatureException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				} catch (PersistenceException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 				return Double.MAX_VALUE;
 			}
@@ -473,8 +476,8 @@ public class ObjectFeatures extends FeatureClass {
 				try {
 					return calculateInt(node);
 				} catch (Throwable th) {
-					System.out.println(th);
-					th.printStackTrace();
+					System.err.println(th);
+					//th.printStackTrace();
 					return calculateInt(node);
 				}
 			}
@@ -530,9 +533,20 @@ public class ObjectFeatures extends FeatureClass {
 					}
 					return count;
 				} catch (InvalidFeatureException e) {
-					e.printStackTrace();
+					System.out.println("IFE: " + e.getMessage());
+					KPartiteGraph<PersistentObject, Partition> net = tg.getNet();
+					System.out.println("Features:");
+					try {
+						for(org.knime.network.core.api.Feature feature : net.getFeatures()) {
+							System.out.println("\t" + feature.getName() + " " + feature.getType().getName());
+						}
+					} catch (PersistenceException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					//e.printStackTrace();
 				} catch (PersistenceException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 				return Double.MAX_VALUE;
 			}

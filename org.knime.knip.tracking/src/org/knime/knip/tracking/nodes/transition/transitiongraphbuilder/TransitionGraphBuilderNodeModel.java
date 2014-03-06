@@ -2,11 +2,8 @@ package org.knime.knip.tracking.nodes.transition.transitiongraphbuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.Set;
 
 import net.imglib2.collection.KDTree;
 import net.imglib2.meta.ImgPlus;
@@ -14,34 +11,25 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 
-import org.knime.core.data.DataCell;
-import org.knime.core.data.DataColumnSpec;
-import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.container.DataContainer;
 import org.knime.core.data.def.DefaultRow;
-import org.knime.core.data.def.DoubleCell;
-import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
-import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
-import org.knime.knip.tracking.data.features.FeatureProvider;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
-import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
 import org.knime.knip.tracking.util.PartitionComparator;
 import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.PartitionType;
-import org.knime.network.core.knime.cell.GraphCellFactory;
 import org.knime.network.core.knime.node.KPartiteGraphViewAndTable2TableNodeModel;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
@@ -66,7 +54,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 	static final String CFGKEY_DISTANCE = "distance";
 
 	/** initial default distance value. */
-	static final double DEFAULT_DISTANCE = 10.0;
+	static final double DEFAULT_DISTANCE = 100.0;
 
 	private final SettingsModelDouble m_distance = createDistanceSettings();
 
@@ -97,31 +85,6 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 
 	}
 
-	private void createTransitionGraph(KDTree<TrackedNode> tree,
-			KDTree<TrackedNode> nextTree, TransitionGraph graph, TrackedNode node,
-			double radius, Set<TrackedNode> usedSegments) {
-		// graph.addNode(node);
-		node.createCopyIn(graph);
-		RadiusNeighborSearchOnKDTree<TrackedNode> rns = new RadiusNeighborSearchOnKDTree<TrackedNode>(
-				nextTree);
-		rns.search(node, radius, false);
-		for (int obj = 0; obj < rns.numNeighbors(); obj++) {
-			TrackedNode nextNode = rns.getSampler(obj).get();
-			if (usedSegments.contains(nextNode))
-				continue;
-			usedSegments.add(nextNode);
-			createTransitionGraph(nextTree, tree, graph, nextNode, radius,
-					usedSegments);
-		}
-	}
-
-	private void addAll(Queue<TrackedNode> queue, KDTree<TrackedNode>.KDTreeCursor cursor) {
-		while (cursor.hasNext()) {
-			TrackedNode node = cursor.next();
-			queue.add(node);
-		}
-	}
-
 	@Override
 	protected void resetInternal() {
 	}
@@ -147,7 +110,9 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 	protected BufferedDataTable execute(ExecutionContext exec,
 			KPartiteGraphView<PersistentObject, Partition> net,
 			BufferedDataTable table) throws Exception {
-		DataContainer cont = exec.createDataContainer(TransitionGraphUtil.createOutSpec());
+		ImgPlusCellFactory ipcf = new ImgPlusCellFactory(exec);
+		DataContainer cont = exec.createDataContainer(TransitionGraphUtil
+				.createOutSpec());
 		List<Partition> partitions = new ArrayList<Partition>(
 				net.getPartitions(PartitionType.NODE));
 		Collections.sort(partitions, new PartitionComparator());
@@ -179,104 +144,105 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 
 			KDTree<TrackedNode> tree = trees.get(p);
 			KDTree<TrackedNode> nextTree = trees.get(p + 1);
+			Partition t0 = net.getPartition(tree.firstElement().getPartition());
+			Partition t1 = net.getPartition(nextTree.firstElement()
+					.getPartition());
 
-			List<TrackedNode> unusedNodes = new LinkedList<TrackedNode>();
-			for (TrackedNode node : nextTree) {
-				unusedNodes.add(node);
-			}
-
-			Set<TrackedNode> usedSegments = new HashSet<TrackedNode>();
-
-			KDTree<TrackedNode>.KDTreeCursor cursor = tree.localizingCursor();
+			KDTree<TrackedNode>.KDTreeCursor cursor = tree.cursor();
 			int count = 0;
-			Queue<TrackedNode> queue = new LinkedList<TrackedNode>();
-			addAll(queue, cursor);
-			while (!queue.isEmpty()) {
+			RadiusNeighborSearchOnKDTree<TrackedNode> rns = new RadiusNeighborSearchOnKDTree<TrackedNode>(nextTree);
+			while (cursor.hasNext()) {
 				exec.checkCanceled();
-				TrackedNode node = queue.poll();
-				if (usedSegments.contains(node))
-					continue;
-				count++;
-				usedSegments.add(node);
-				// search for all connected nodes ( dist <= radius )
-				// List<Node> connectedNodes = getConnectedNodes(tree, nextTree,
-				// node, m_distance.getDoubleValue(), usedSegments);
-				// System.out.println(connectedNodes);
-				// add both partitions - needed for 0->1 and 1 -> 0 graphs
-				Partition t0 = net.getPartition(tree.firstElement().getPartition());
-				Partition t1 = net.getPartition(nextTree.firstElement().getPartition());
-				TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
-				createTransitionGraph(tree, nextTree, tg, node,
-						m_distance.getDoubleValue(), usedSegments);
-//				 System.out.println(tg + " " +
-//				 tg.getNodes(tg.getFirstPartition()) + " " +
-//				 tg.getNodes(tg.getLastPartition()));
-
-				unusedNodes.removeAll(tg.getNodes(tg.getLastPartition()));
-
-				// int variantCounter = 0;
-				// for(TransitionGraph tgvariant :
-				// TransitionGraph.createAllPossibleGraphs(tg)) {
-				// no more variants for now.
-				TransitionGraph tgvariant = tg;
-				DataCell[] cells = new DataCell[cont.getTableSpec()
-						.getNumColumns()];
-				cells[0] = new ImgPlusCellFactory(exec)
-						.createCell(TransitionGraphRenderer
-								.renderTransitionGraph(tg, baseImg, tgvariant));
-				cells[1] = new StringCell(tgvariant.toString());
-				cells[2] = new StringCell(tgvariant.toNodeString());
-				cells[3] = GraphCellFactory.createCell(tgvariant.getNet());
-				double[] distVec = FeatureProvider.getFeatureVector(tgvariant);
-				for (int i = 0; i < distVec.length; i++) {
-					cells[i + 4] = new DoubleCell(distVec[i]);
+				TrackedNode startNode = cursor.next();				
+				rns.search(startNode, m_distance.getDoubleValue(), true);
+				double lastDist = -1;
+				List<TrackedNode> otherNodes = new ArrayList<TrackedNode>();
+				for(int n = 0; n < rns.numNeighbors(); n++) {
+					double dist = rns.getSquareDistance(n);
+					if(lastDist != -1 && dist > 10*lastDist) {
+						//System.out.println("break early on " + startNode + " due to: " + dist + " vs " + lastDist);
+						break;
+					}
+					lastDist = dist;
+					TrackedNode endNode = rns.getSampler(n).get();
+					otherNodes.add(endNode);
 				}
-				cont.addRowToTable(new DefaultRow(p + "#" + count /*
-																 * + ";" +
-																 * variantCounter
-																 */, cells));
-				// variantCounter++;
-
-				// debug
-				// for(String partition : tgvariant.getPartitions()) {
-				// for(Node n : tgvariant.getNodes(partition)) {
-				// System.out.println(n + " out: " + n.getOutgoingEdges());
-				// }
-				// }
-				// enddebug
-				// }
-			}
-
-			Set<TrackedNode> alreadyUsedNodes = new HashSet<TrackedNode>();
-			// nodes in second partition without possible match in first, create
-			// transition
-			for (TrackedNode node : unusedNodes) {
-				exec.checkCanceled();
-				//ignore nodes already used now
-				if(alreadyUsedNodes.contains(node)) continue;
-				// add both partitions - needed for 0->1 and 1 -> 0 graphs
-				Partition t0 = net.getPartition(tree.firstElement().getPartition());
-				Partition t1 = net.getPartition(nextTree.firstElement().getPartition());
-				TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
-				// add node
-				node.createCopyIn(tg);
-
-				// look for other nodes in distance
-				for (TrackedNode node2 : unusedNodes) {
-					if (node2.equals(node))
-						continue;
-					if (node.distanceTo(node2) < m_distance.getDoubleValue()) {
-						node2.createCopyIn(tg);
-						alreadyUsedNodes.add(node);
+				if(otherNodes.isEmpty()) {
+					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+					startNode.createCopyIn(tg);
+					cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+					count++;
+				}
+				for(int i = 0; i < otherNodes.size(); i++) {
+					TrackedNode endNode1 = otherNodes.get(i);
+					{
+						TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+						TrackedNode sN = startNode.createCopyIn(tg);
+						TrackedNode eN = endNode1.createCopyIn(tg);
+						tg.createEdge(sN, eN);
+						cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+						count++;
+					}
+					for(int j = i+1; j < otherNodes.size(); j++) {
+						TrackedNode endNode2 = otherNodes.get(j);
+						{
+							TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+							TrackedNode sN = startNode.createCopyIn(tg);
+							TrackedNode eN1 = endNode1.createCopyIn(tg);
+							TrackedNode eN2 = endNode2.createCopyIn(tg);
+							tg.createEdge(sN, eN1);
+							tg.createEdge(sN, eN2);
+							cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							count++;
+						}
 					}
 				}
-				count++;
-				cont.addRowToTable(new DefaultRow(p + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, exec)));
 			}
-
-			// System.out.println("unused nodes: " + unusedNodes);
+			//now 
+			cursor = nextTree.cursor();
+			rns = new RadiusNeighborSearchOnKDTree<TrackedNode>(tree);
+			while(cursor.hasNext()) {
+				TrackedNode endNode = cursor.next();
+				rns.search(endNode, m_distance.getDoubleValue(), true);
+				List<TrackedNode> otherNodes = new ArrayList<TrackedNode>();
+				double lastDist = -1;
+				for(int n = 0; n < rns.numNeighbors(); n++) {
+					double dist = rns.getSquareDistance(n);
+					if(lastDist != -1 && dist > 10*lastDist) {
+						//System.out.println("break early on " + endNode + " due to: " + dist + " vs " + lastDist);
+						break;
+					}
+					lastDist = dist;
+					TrackedNode startNode = rns.getSampler(n).get();
+					otherNodes.add(startNode);
+				}
+				if(otherNodes.isEmpty()) {
+					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+					endNode.createCopyIn(tg);
+					cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+					count++;
+				}
+				for(int i = 0; i < otherNodes.size(); i++) {
+					TrackedNode startNode1 = otherNodes.get(i);
+					//1-1 connections already handled in first loop
+					for(int j = i+1; j < otherNodes.size(); j++) {
+						TrackedNode startNode2 = otherNodes.get(j);
+						{
+							TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+							TrackedNode eN = endNode.createCopyIn(tg);
+							TrackedNode sN1 = startNode1.createCopyIn(tg);
+							TrackedNode sN2 = startNode2.createCopyIn(tg);
+							tg.createEdge(sN1, eN);
+							tg.createEdge(sN2, eN);
+							cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							count++;
+						}
+					}
+				}
+			}
 		}
 		cont.close();
+
 		return exec.createBufferedDataTable(cont.getTable(), exec);
 	}
 

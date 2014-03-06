@@ -29,6 +29,7 @@ import org.knime.knip.tracking.util.OffsetHandling;
 import org.knime.knip.tracking.util.PartitionComparatorString;
 import org.knime.knip.tracking.util.Permutation;
 import org.knime.knip.tracking.util.TrackingConstants;
+import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.algorithm.search.dfs.WeakConnectedComponent;
 import org.knime.network.core.api.Feature;
 import org.knime.network.core.api.KPartiteGraph;
@@ -242,7 +243,7 @@ public class TransitionGraph {
 
 			for (TrackedNode node : tfpNodes) {
 				TrackedNode otherNode = permutation[index++];
-				dist += TrackingUtils.squareDistanceTo(node,otherNode);
+				dist += TrackingUtils.squareDistanceTo(node, otherNode);
 			}
 
 			if (dist < minDist) {
@@ -490,10 +491,116 @@ public class TransitionGraph {
 	 */
 	public static Collection<TransitionGraph> createAllPossibleGraphs(
 			TransitionGraph tg) {
-		if (tg.edges.size() == 0)
-			return createAllSubGraphs(tg);
-		else
-			return createLearningExamples(tg);
+		return createMax12SubGraphs(tg);
+		// if (tg.edges.size() == 0)
+		// return createAllSubGraphs(tg);
+		// else
+		// return createLearningExamples(tg);
+	}
+
+	public static Collection<TransitionGraph> createMax12SubGraphs(
+			TransitionGraph tg) {
+		List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
+
+		Partition t0 = null, t1 = null;
+		try {
+			t0 = tg.getNet().getPartition(tg.getFirstPartition());
+			t1 = tg.getNet().getPartition(tg.getLastPartition());
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		}
+
+		ArrayList<TrackedNode> n0 = new ArrayList<TrackedNode>(tg.getNodes(tg
+				.getFirstPartition()));
+		ArrayList<TrackedNode> n1 = new ArrayList<TrackedNode>(tg.getNodes(tg
+				.getLastPartition()));
+
+		if (n0.size() == 1) {
+			TrackedNode startNode = n0.get(0);
+			for (int i = 0; i < n1.size(); i++) {
+				TrackedNode endNode1 = n1.get(i);
+				// create 1:1 subgraph
+				{
+					TransitionGraph graph = TransitionGraphUtil
+							.createTransitionGraphForNetwork(tg.getNet(), t0,
+									t1);
+					TrackedNode sN = startNode.createCopyIn(graph);
+					endNode1 = endNode1.createCopyIn(graph);
+					try {
+						graph.createEdge(sN, endNode1);
+					} catch (PersistenceException e) {
+						e.printStackTrace();
+					}
+					graphs.add(graph);
+				}
+				// 1:1 created
+				for (int j = i + 1; j < n1.size(); j++) {
+					TrackedNode endNode2 = n1.get(j);
+					// create 1:2 subgraph
+					TransitionGraph graph = TransitionGraphUtil
+							.createTransitionGraphForNetwork(tg.getNet(), t0,
+									t1);
+					TrackedNode sN = startNode.createCopyIn(graph);
+					endNode1 = endNode1.createCopyIn(graph);
+					endNode2 = endNode2.createCopyIn(graph);
+					try {
+						graph.createEdge(sN, endNode1);
+						graph.createEdge(sN, endNode2);
+					} catch (PersistenceException e) {
+						e.printStackTrace();
+					}
+					graphs.add(graph);
+				}
+			}
+		}
+		if (n1.size() == 1) {
+			TrackedNode endNode = n1.get(0);
+			for (int i = 0; i < n0.size(); i++) {
+				TrackedNode startNode1 = n0.get(i);
+				// create 1:1 subgraph
+				{
+					TransitionGraph graph = TransitionGraphUtil
+							.createTransitionGraphForNetwork(tg.getNet(), t0,
+									t1);
+					TrackedNode eN = endNode.createCopyIn(graph);
+					startNode1 = startNode1.createCopyIn(graph);
+					try {
+						graph.createEdge(startNode1, eN);
+					} catch (PersistenceException e) {
+						e.printStackTrace();
+					}
+					graphs.add(graph);
+				}
+				// 1:1 created
+				for (int j = i + 1; j < n0.size(); j++) {
+					TrackedNode startNode2 = n0.get(j);
+					// create 1:2 subgraph
+					TransitionGraph graph = TransitionGraphUtil
+							.createTransitionGraphForNetwork(tg.getNet(), t0,
+									t1);
+					TrackedNode eN = endNode.createCopyIn(graph);
+					startNode1 = startNode1.createCopyIn(graph);
+					startNode2 = startNode2.createCopyIn(graph);
+					try {
+						graph.createEdge(startNode1, eN);
+						graph.createEdge(startNode2, eN);
+					} catch (PersistenceException e) {
+						e.printStackTrace();
+					}
+					graphs.add(graph);
+				}
+			}
+		}
+		
+		if(n0.size() != 1 && n1.size() != 1) {
+			System.err.println("This should never happen.");
+		}
+
+		if (graphs.isEmpty()) {
+			graphs.add(tg);
+		}
+
+		return graphs;
 	}
 
 	public static Collection<TransitionGraph> createLearningExamples(
@@ -547,6 +654,19 @@ public class TransitionGraph {
 
 		List<TransitionGraph> graphs = new LinkedList<TransitionGraph>();
 
+		Partition t0 = null;
+		try {
+			t0 = tg.getNet().getPartition(tg.getFirstPartition());
+		} catch (PersistenceException e1) {
+			e1.printStackTrace();
+		}
+		Partition t1 = null;
+		try {
+			t1 = tg.getNet().getPartition(tg.getLastPartition());
+		} catch (PersistenceException e1) {
+			e1.printStackTrace();
+		}
+
 		if (tg.getNodes(tg.getLastPartition()).size() > 1) {
 			// all 1:n combinations
 			for (TrackedNode firstnode : tg.getNodes(tg.getFirstPartition())) {
@@ -555,9 +675,11 @@ public class TransitionGraph {
 				int n = nodes.size();
 				for (long i = 1; i < (1L << n); i++) {
 					try {
-						TransitionGraph graph = new TransitionGraph(
-								tg.getPartitions());
-						TrackedNode firstnodeCopy = firstnode.createCopyIn(graph);
+						TransitionGraph graph = TransitionGraphUtil
+								.createTransitionGraphForNetwork(tg.getNet(),
+										t0, t1);
+						TrackedNode firstnodeCopy = firstnode
+								.createCopyIn(graph);
 						for (int j = 0; j < n; j++) {
 							if ((i >> j) % 2 == 1) {
 								TrackedNode node = nodes.get(j);
@@ -585,9 +707,11 @@ public class TransitionGraph {
 						continue;
 					}
 					try {
-						TransitionGraph graph = new TransitionGraph(
-								tg.getPartitions());
-						TrackedNode secondnodeCopy = secondnode.createCopyIn(graph);
+						TransitionGraph graph = TransitionGraphUtil
+								.createTransitionGraphForNetwork(tg.getNet(),
+										t0, t1);
+						TrackedNode secondnodeCopy = secondnode
+								.createCopyIn(graph);
 						for (int j = 0; j < n; j++) {
 							if ((i >> j) % 2 == 1) {
 								TrackedNode node = nodes.get(j);
@@ -604,20 +728,21 @@ public class TransitionGraph {
 		}
 
 		if (graphs.isEmpty()) {
-			try {
-				TransitionGraph copy = new TransitionGraph(tg);
-				if (copy.getNodes(copy.getFirstPartition()).size() > 0
-						&& copy.getNodes(copy.getLastPartition()).size() > 0) {
-					TrackedNode start = copy.getNodes(copy.getFirstPartition())
-							.iterator().next();
-					TrackedNode end = copy.getNodes(copy.getLastPartition())
-							.iterator().next();
-					copy.createEdge(start, end);
-				}
-				graphs.add(copy);
-			} catch (PersistenceException e) {
-				e.printStackTrace();
-			}
+			// try {
+			// TransitionGraph copy = new TransitionGraph(tg);
+			// if (copy.getNodes(copy.getFirstPartition()).size() > 0
+			// && copy.getNodes(copy.getLastPartition()).size() > 0) {
+			// TrackedNode start = copy.getNodes(copy.getFirstPartition())
+			// .iterator().next();
+			// TrackedNode end = copy.getNodes(copy.getLastPartition())
+			// .iterator().next();
+			// copy.createEdge(start, end);
+			// }
+			// graphs.add(copy);
+			graphs.add(tg);
+			// } catch (PersistenceException e) {
+			// e.printStackTrace();
+			// }
 			// System.out.println("#tg edges: " + tg.edges.size());
 		}
 
@@ -641,7 +766,8 @@ public class TransitionGraph {
 			if (n.getID().equals(node.getID()))
 				return n;
 		}
-		throw new IllegalArgumentException(node + " not found in this copy.");
+		throw new IllegalArgumentException(node + " not found in this tg: "
+				+ this.toNodeString());
 	}
 
 	public List<Edge> getEdges() {
@@ -691,8 +817,7 @@ public class TransitionGraph {
 		int partIdx = 0;
 		for (String partition : partitions) {
 			if (!nodes.get(partition).isEmpty()) {
-				return nodes.get(partition).iterator().next().frame()
-						- partIdx;
+				return nodes.get(partition).iterator().next().frame() - partIdx;
 			}
 			partIdx++;
 		}
@@ -702,7 +827,7 @@ public class TransitionGraph {
 	public Pair<Integer, Integer> getPairing() {
 		Set<TrackedNode> from = new HashSet<TrackedNode>();
 		Set<TrackedNode> to = new HashSet<TrackedNode>();
-		for(Edge edge : edges) {
+		for (Edge edge : edges) {
 			from.add(edge.getStartNode());
 			to.add(edge.getEndNode());
 		}

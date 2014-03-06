@@ -14,9 +14,9 @@ import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
-import org.knime.core.node.ExecutionContext;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
+import org.knime.knip.tracking.data.TransitionGraphDataObject;
 import org.knime.knip.tracking.data.features.FeatureProvider;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
@@ -45,10 +45,10 @@ public class TransitionGraphUtil {
 	}
 
 	public static <T extends NativeType<T> & IntegerType<T>> DataCell[] transitionGraph2DataCells(
-			TransitionGraph tg, ImgPlus<T> baseImg, ExecutionContext exec) {
+			TransitionGraph tg, ImgPlus<T> baseImg, ImgPlusCellFactory ipcf) {
 		DataCell[] cells = new DataCell[createOutSpec().getNumColumns()];
 		try {
-			cells[0] = new ImgPlusCellFactory(exec)
+			cells[0] = ipcf
 					.createCell(TransitionGraphRenderer.renderTransitionGraph(
 							tg, baseImg, tg));
 		} catch (IOException e) {
@@ -63,7 +63,22 @@ public class TransitionGraphUtil {
 		}
 		return cells;
 	}
-
+	
+	public static <T extends NativeType<T> & IntegerType<T>> DataCell[] tgdo2DataCells(
+			TransitionGraphDataObject<T> tgdo) {
+		DataCell[] cells = new DataCell[createOutSpec().getNumColumns()];
+		cells[0] = tgdo.getImgPlusCell();
+		TransitionGraph tg = tgdo.getTransitionGraph();
+		cells[1] = new StringCell(tg.toString());
+		cells[2] = new StringCell(tg.toNodeString());
+		cells[3] = GraphCellFactory.createCell(tg.getNet());
+		double[] distVec = FeatureProvider.getFeatureVector(tg);
+		for (int i = 0; i < distVec.length; i++) {
+			cells[i + 4] = new DoubleCell(distVec[i]);
+		}
+		return cells;
+	}
+	
 	public static TransitionGraph createTransitionGraphForNetwork(
 			KPartiteGraphView<PersistentObject, Partition> net, Partition t0,
 			Partition t1) {

@@ -47,6 +47,18 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 	protected TransitionEnumeratorNodeModel() {
 		super(2, 1);
 	}
+	
+	private DataTableSpec createOutSpec(DataTableSpec inSpec) {
+//		DataColumnSpec[] dcs = new DataColumnSpec[inSpec.getNumColumns()];
+//		for(int c = 0; c < dcs.length; c++) {
+//			dcs[c] = inSpec.getColumnSpec(c);
+//			if(c == 0 || c==3) {
+//				dcs[c] = new DataColumnSpecCreator("bla" + c, StringCell.TYPE).createSpec();
+//			}
+//		}
+//		return new DataTableSpec(dcs); 
+		return inSpec;
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -55,8 +67,10 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 	protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
 			final ExecutionContext exec) throws Exception {
 
-		DataContainer cont = exec.createDataContainer(inData[0]
-				.getDataTableSpec());
+//		DataContainer cont = exec.createDataContainer(inData[0]
+//				.getDataTableSpec());
+		
+		DataContainer cont = exec.createDataContainer(createOutSpec(inData[0].getDataTableSpec()));
 
 		int graphColIdx = NodeUtils.autoColumnSelection(inData[0]
 				.getDataTableSpec(), new SettingsModelString("bla", null),
@@ -126,7 +140,7 @@ public class TransitionEnumeratorNodeModel<T extends NativeType<T> & IntegerType
 			throw new InvalidSettingsException(
 					"Input table #2 must contain the original image.");
 
-		return new DataTableSpec[] { inSpecs[0] };
+		return new DataTableSpec[]{createOutSpec(inSpecs[0])};
 	}
 
 	/**

@@ -24,20 +24,18 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.util.PartitionComparator;
-import org.knime.knip.tracking.util.TrackingConstants;
 import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.api.GraphObjectIterator;
 import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.PartitionType;
-import org.knime.network.core.core.exception.InvalidFeatureException;
 import org.knime.network.core.core.exception.PersistenceException;
-import org.knime.network.core.core.feature.FeatureTypeFactory;
 import org.knime.network.core.knime.node.KPartiteGraphViewAndTable2TableNodeModel;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
@@ -95,6 +93,8 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 		BufferedReader in = new BufferedReader(new FileReader(file));
 		String line = null;
 		String category = "missing";
+		
+		ImgPlusCellFactory ipcf = new ImgPlusCellFactory(exec);
 
 		// extract 2nd frameName
 		String tmpId, frameName1 = frameName;
@@ -161,7 +161,7 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 				}
 				cont.addRowToTable(new DefaultRow(frameName + "#" + count,
 						TransitionGraphUtil.transitionGraph2DataCells(tg,
-								baseImg, exec)));
+								baseImg, ipcf)));
 				count++;
 			} catch (PersistenceException e) {
 				e.printStackTrace();

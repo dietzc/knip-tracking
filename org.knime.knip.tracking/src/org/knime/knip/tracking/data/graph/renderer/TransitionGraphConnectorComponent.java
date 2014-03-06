@@ -17,7 +17,8 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import net.imglib2.meta.ImgPlus;
-import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 
 import org.knime.base.util.kdtree.KDTree;
 import org.knime.base.util.kdtree.KDTreeBuilder;
@@ -31,14 +32,14 @@ import org.knime.knip.tracking.data.graph.Edge;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 
-public class TransitionGraphConnectorComponent<T extends RealType<T>> extends
+public class TransitionGraphConnectorComponent<T extends NativeType<T> & IntegerType<T>> extends
 		JPanel implements MouseListener, MouseMotionListener {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6266875939313108708L;
 
-	private TransitionGraphDataObject tgdo;
+	private TransitionGraphDataObject<T> tgdo;
 	private TransitionGraph tg;
 	private ImgPlus<T> img;
 	private BufferedImage bimg;
@@ -56,7 +57,7 @@ public class TransitionGraphConnectorComponent<T extends RealType<T>> extends
 
 	private int partitionWidth;
 
-	public TransitionGraphConnectorComponent(TransitionGraphDataObject tgdo,
+	public TransitionGraphConnectorComponent(TransitionGraphDataObject<T> tgdo,
 			ImgPlus<T> img) {
 		this.tgdo = tgdo;
 		this.tg = tgdo.getTransitionGraph();
@@ -217,10 +218,10 @@ public class TransitionGraphConnectorComponent<T extends RealType<T>> extends
 		}
 	}
 
-	private TransitionGraphComponentListener m_listener = null;
+	private TransitionGraphComponentListener<T> m_listener = null;
 
 	public void setTransitionGraphComponentListener(
-			TransitionGraphComponentListener listener) {
+			TransitionGraphComponentListener<T> listener) {
 		m_listener = listener;
 	}
 

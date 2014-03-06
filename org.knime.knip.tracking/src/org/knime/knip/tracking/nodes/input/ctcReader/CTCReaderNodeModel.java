@@ -26,6 +26,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.knip.base.data.img.ImgPlusCellFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
@@ -108,6 +109,8 @@ public class CTCReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 		@SuppressWarnings("unchecked")
 		ImgPlus<T> baseImg = ((ImgPlusValue<T>) table.iterator().next()
 				.getCell(0)).getImgPlus();
+		
+		ImgPlusCellFactory ipcf = new ImgPlusCellFactory(exec);
 
 		DataContainer cont = exec.createDataContainer(createOutputSpec());
 
@@ -160,7 +163,7 @@ public class CTCReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 					tg.createEdge(source, target);
 					cont.addRowToTable(new DefaultRow(frameName + "#" + count,
 							TransitionGraphUtil.transitionGraph2DataCells(tg,
-									baseImg, exec)));
+									baseImg, ipcf)));
 					count++;
 				}
 			}
@@ -234,7 +237,7 @@ public class CTCReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 			counts.put(frameName, count);
 			cont.addRowToTable(new DefaultRow(frameName + "#" + count,
 					TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg,
-							exec)));
+							ipcf)));
 		}
 
 		cont.close();
