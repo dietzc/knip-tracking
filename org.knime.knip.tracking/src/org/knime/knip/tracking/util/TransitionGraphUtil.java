@@ -16,7 +16,6 @@ import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
-import org.knime.knip.tracking.data.TransitionGraphDataObject;
 import org.knime.knip.tracking.data.features.FeatureProvider;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
@@ -54,21 +53,6 @@ public class TransitionGraphUtil {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		cells[1] = new StringCell(tg.toString());
-		cells[2] = new StringCell(tg.toNodeString());
-		cells[3] = GraphCellFactory.createCell(tg.getNet());
-		double[] distVec = FeatureProvider.getFeatureVector(tg);
-		for (int i = 0; i < distVec.length; i++) {
-			cells[i + 4] = new DoubleCell(distVec[i]);
-		}
-		return cells;
-	}
-	
-	public static <T extends NativeType<T> & IntegerType<T>> DataCell[] tgdo2DataCells(
-			TransitionGraphDataObject<T> tgdo) {
-		DataCell[] cells = new DataCell[createOutSpec().getNumColumns()];
-		cells[0] = tgdo.getImgPlusCell();
-		TransitionGraph tg = tgdo.getTransitionGraph();
 		cells[1] = new StringCell(tg.toString());
 		cells[2] = new StringCell(tg.toNodeString());
 		cells[3] = GraphCellFactory.createCell(tg.getNet());

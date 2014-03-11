@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.knime.network.core.api.Feature;
-import org.knime.network.core.api.KPartiteGraphView;
+import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.exception.InvalidFeatureException;
@@ -12,9 +12,9 @@ import org.knime.network.core.core.exception.PersistenceException;
 
 public abstract class GraphObject {
 	private PersistentObject pObj;
-	private KPartiteGraphView<PersistentObject, Partition> net;
+	private KPartiteGraph<PersistentObject, Partition> net;
 
-	public GraphObject(KPartiteGraphView<PersistentObject, Partition> net,
+	public GraphObject(KPartiteGraph<PersistentObject, Partition> net,
 			PersistentObject pObj) {
 		this.pObj = pObj;
 		this.net = net;
@@ -24,7 +24,7 @@ public abstract class GraphObject {
 		return this.pObj;
 	}
 
-	public KPartiteGraphView<PersistentObject, Partition> getNetwork() {
+	public KPartiteGraph<PersistentObject, Partition> getNetwork() {
 		return this.net;
 	}
 

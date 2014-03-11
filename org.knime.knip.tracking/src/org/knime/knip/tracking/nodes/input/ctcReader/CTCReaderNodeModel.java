@@ -33,9 +33,11 @@ import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.util.PartitionSorter;
 import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.api.GraphObjectIterator;
+import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
+import org.knime.network.core.core.GraphFactory;
 import org.knime.network.core.knime.node.KPartiteGraphViewAndTable2TableNodeModel;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
 
@@ -93,10 +95,12 @@ public class CTCReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 
 	@Override
 	protected BufferedDataTable execute(ExecutionContext exec,
-			KPartiteGraphView<PersistentObject, Partition> net,
+			KPartiteGraphView<PersistentObject, Partition> netView,
 			BufferedDataTable table) throws Exception {
 		File maindir = new File(folderSetting.getStringValue());
 		File trackFile = new File(maindir, "tra/man_track.txt");
+		
+		KPartiteGraph<PersistentObject, Partition> net = GraphFactory.createIncrementalNet(netView);
 
 		if (!trackFile.exists())
 			throw new InvalidSettingsException(

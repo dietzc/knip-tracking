@@ -26,9 +26,11 @@ import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.util.PartitionComparator;
 import org.knime.knip.tracking.util.TransitionGraphUtil;
+import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
+import org.knime.network.core.core.GraphFactory;
 import org.knime.network.core.core.PartitionType;
 import org.knime.network.core.knime.node.KPartiteGraphViewAndTable2TableNodeModel;
 import org.knime.network.core.knime.port.GraphPortObjectSpec;
@@ -108,8 +110,9 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 
 	@Override
 	protected BufferedDataTable execute(ExecutionContext exec,
-			KPartiteGraphView<PersistentObject, Partition> net,
+			KPartiteGraphView<PersistentObject, Partition> netView,
 			BufferedDataTable table) throws Exception {
+		KPartiteGraph<PersistentObject, Partition> net = GraphFactory.createIncrementalNet(netView);
 		ImgPlusCellFactory ipcf = new ImgPlusCellFactory(exec);
 		DataContainer cont = exec.createDataContainer(TransitionGraphUtil
 				.createOutSpec());

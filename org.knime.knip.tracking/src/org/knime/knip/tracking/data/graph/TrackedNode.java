@@ -13,11 +13,12 @@ import net.imglib2.type.numeric.RealType;
 
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.knip.base.data.img.ImgPlusValue;
+import org.knime.knip.tracking.util.DoubleHandler;
 import org.knime.knip.tracking.util.OffsetHandling;
 import org.knime.knip.tracking.util.Permutation;
 import org.knime.knip.tracking.util.TrackingConstants;
 import org.knime.network.core.api.Feature;
-import org.knime.network.core.api.KPartiteGraphView;
+import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.exception.InvalidFeatureException;
@@ -43,7 +44,7 @@ public class TrackedNode extends GraphObject implements
 	private double frame;
 	private HashMap<String, Double> m_features;
 
-	public TrackedNode(KPartiteGraphView<PersistentObject, Partition> net,
+	public TrackedNode(KPartiteGraph<PersistentObject, Partition> net,
 			PersistentObject pObj) {
 		super(net, pObj);
 
@@ -309,5 +310,26 @@ public class TrackedNode extends GraphObject implements
 	@Override
 	public int ID() {
 		return getID().hashCode();
+	}
+
+	public void setNetworkFeature(String networkFeatureName, double[] vals) {
+		try {
+			this.getNetwork().addFeature(getPersistentObject(), networkFeatureName, DoubleHandler.encode(vals));
+		} catch (InvalidFeatureException e) {
+			e.printStackTrace();
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		}		
+	}
+	
+	public double[] getNetworkFeature(String networkFeatureName) {
+		try {
+			return DoubleHandler.decode(this.getNetwork().getFeatureString(getPersistentObject(), networkFeatureName));
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		} catch (InvalidFeatureException e) {
+			e.printStackTrace();
+		}
+		return new double[0];
 	}
 }
