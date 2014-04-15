@@ -17,7 +17,6 @@ import org.knime.core.node.KNIMEConstants;
 import org.knime.core.util.ThreadPool;
 import org.knime.knip.base.data.IntervalValue;
 import org.knime.knip.tracking.data.Interval;
-import org.knime.knip.tracking.nodes.trackletcombiner.solver.ApacheCommonsMathSolver;
 import org.knime.knip.tracking.nodes.trackletcombiner.solver.LPSolveSolver;
 import org.knime.knip.tracking.nodes.trackletcombiner.solver.Solver;
 import org.knime.knip.tracking.util.OffsetHandling;
@@ -222,14 +221,7 @@ public class HypothesesHandler {
 		//
 		// System.out.println();
 
-		Solver solver = new ApacheCommonsMathSolver();
-		// try all solvers for debug reasons
-		// try {
-		// solver.solve(transposedIndices, hypotheses.size(), propabilities);
-		// } catch (Throwable e2) {
-		// e2.printStackTrace();
-		// }
-		solver = new LPSolveSolver();
+		Solver solver = new LPSolveSolver();
 		double[] result = new double[0];
 		try {
 			result = solver.solve(transposedIndices, hypotheses.size(),

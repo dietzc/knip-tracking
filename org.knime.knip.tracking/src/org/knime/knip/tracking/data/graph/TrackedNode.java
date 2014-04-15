@@ -23,6 +23,7 @@ import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.exception.InvalidFeatureException;
 import org.knime.network.core.core.exception.PersistenceException;
+import org.knime.network.core.core.feature.FeatureTypeFactory;
 
 import fiji.plugin.trackmate.tracking.TrackableObject;
 import fiji.plugin.trackmate.tracking.TrackingUtils;
@@ -314,6 +315,8 @@ public class TrackedNode extends GraphObject implements
 
 	public void setNetworkFeature(String networkFeatureName, double[] vals) {
 		try {
+			if(!this.getNetwork().isFeatureDefined(networkFeatureName))
+				this.getNetwork().defineFeature(FeatureTypeFactory.getStringType(), networkFeatureName);
 			this.getNetwork().addFeature(getPersistentObject(), networkFeatureName, DoubleHandler.encode(vals));
 		} catch (InvalidFeatureException e) {
 			e.printStackTrace();

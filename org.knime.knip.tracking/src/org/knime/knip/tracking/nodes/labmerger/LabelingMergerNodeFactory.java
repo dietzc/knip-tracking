@@ -1,5 +1,8 @@
 package org.knime.knip.tracking.nodes.labmerger;
 
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
+
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
@@ -11,15 +14,15 @@ import org.knime.knip.base.nodes.view.TableCellViewNodeView;
  *
  * @author Stephan Sellien
  */
-public class LabelingMergerNodeFactory 
-        extends NodeFactory<LabelingMergerNodeModel> {
+public class LabelingMergerNodeFactory<L extends Comparable<L>, T extends IntegerType<T> &NativeType<T>> 
+        extends NodeFactory<LabelingMergerNodeModel<L,T>> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public LabelingMergerNodeModel createNodeModel() {
-        return new LabelingMergerNodeModel();
+    public LabelingMergerNodeModel<L,T> createNodeModel() {
+        return new LabelingMergerNodeModel<L,T>();
     }
 
     /**
@@ -34,9 +37,9 @@ public class LabelingMergerNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<LabelingMergerNodeModel> createNodeView(final int viewIndex,
-            final LabelingMergerNodeModel nodeModel) {
-        return new TableCellViewNodeView<LabelingMergerNodeModel>(nodeModel,0);
+    public NodeView<LabelingMergerNodeModel<L,T>> createNodeView(final int viewIndex,
+            final LabelingMergerNodeModel<L,T> nodeModel) {
+        return new TableCellViewNodeView<LabelingMergerNodeModel<L,T>>(nodeModel,0);
     }
 
     /**

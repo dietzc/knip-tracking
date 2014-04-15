@@ -84,9 +84,9 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 		folderSetting.loadSettingsFrom(settings);
 	}
 
-	private List<TrackedNode> avgNodesToUpdate = new LinkedList<TrackedNode>();
+//	private List<TrackedNode> avgNodesToUpdate = new LinkedList<TrackedNode>();
 	//TODO: create dummy for avgNode
-	private TrackedNode avgNode;
+//	private TrackedNode avgNode;
 
 	private void parse(File file,
 			KPartiteGraph<PersistentObject, Partition> net, Partition t0,
@@ -94,7 +94,7 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 			ExecutionContext exec, ImgPlus<T> baseImg) throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader(file));
 		String line = null;
-		String category = "missing";
+//		String category = "missing";
 		
 		ImgPlusCellFactory ipcf = new ImgPlusCellFactory(exec);
 
@@ -112,7 +112,7 @@ public class BOTReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 
 		while ((line = in.readLine()) != null) {
 			if (line.startsWith("[")) {
-				category = line.replaceAll("[\\]\\[]", "");
+//				category = line.replaceAll("[\\]\\[]", "");
 				continue;
 			}
 			if (line.isEmpty())

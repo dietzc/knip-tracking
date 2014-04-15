@@ -179,7 +179,7 @@ public class CTCReaderNodeModel<T extends NativeType<T> & IntegerType<T>>
 		while ((line = in.readLine()) != null) {
 			String[] parts = line.split("\\s+");
 			int trackNo = Integer.parseInt(parts[0]);
-			int trackStartTime = Integer.parseInt(parts[1]);
+			//int trackStartTime = Integer.parseInt(parts[1]);
 			int trackEndTime = Integer.parseInt(parts[2]);
 			int parentTrack = Integer.parseInt(parts[3]);
 

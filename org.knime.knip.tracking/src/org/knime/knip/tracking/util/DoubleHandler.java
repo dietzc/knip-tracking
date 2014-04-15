@@ -1,5 +1,6 @@
 package org.knime.knip.tracking.util;
 
+
 public class DoubleHandler {
 	public static double[] decode(String s) {
 		String[] parts = s.split("\\s+");
@@ -13,7 +14,7 @@ public class DoubleHandler {
 	public static String encode(double[] vals) {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < vals.length;i++){
-			sb.append(vals);
+			sb.append(vals[i]);
 			if(i < vals.length - 1)
 				sb.append(' ');
 		}

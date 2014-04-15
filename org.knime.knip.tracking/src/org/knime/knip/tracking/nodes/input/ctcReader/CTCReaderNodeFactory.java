@@ -1,5 +1,8 @@
 package org.knime.knip.tracking.nodes.input.ctcReader;
 
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
+
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
@@ -10,15 +13,15 @@ import org.knime.core.node.NodeView;
  *
  * @author Stephan Sellien
  */
-public class CTCReaderNodeFactory 
-        extends NodeFactory<CTCReaderNodeModel> {
+public class CTCReaderNodeFactory<T extends NativeType<T> & IntegerType<T>> 
+        extends NodeFactory<CTCReaderNodeModel<T>> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public CTCReaderNodeModel createNodeModel() {
-        return new CTCReaderNodeModel();
+    public CTCReaderNodeModel<T> createNodeModel() {
+        return new CTCReaderNodeModel<T>();
     }
 
     /**
@@ -26,16 +29,16 @@ public class CTCReaderNodeFactory
      */
     @Override
     public int getNrNodeViews() {
-        return 1;
+        return 0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public NodeView<CTCReaderNodeModel> createNodeView(final int viewIndex,
-            final CTCReaderNodeModel nodeModel) {
-        return new CTCReaderNodeView(nodeModel);
+    public NodeView<CTCReaderNodeModel<T>> createNodeView(final int viewIndex,
+            final CTCReaderNodeModel<T> nodeModel) {
+        return null;
     }
 
     /**

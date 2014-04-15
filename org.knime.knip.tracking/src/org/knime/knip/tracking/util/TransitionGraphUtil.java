@@ -1,11 +1,18 @@
 package org.knime.knip.tracking.util;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.IntegerType;
 
 import org.knime.core.data.DataCell;
@@ -16,7 +23,8 @@ import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.base.data.img.ImgPlusCellFactory;
-import org.knime.knip.tracking.data.features.FeatureProvider;
+import org.knime.knip.tracking.data.featuresnew.FeatureHandler;
+import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 import org.knime.knip.tracking.data.graph.renderer.TransitionGraphRenderer;
 import org.knime.network.core.api.KPartiteGraphView;
@@ -36,7 +44,7 @@ public class TransitionGraphUtil {
 				.createSpec());
 		cols.add(new DataColumnSpecCreator("Transition graphs",
 				GraphCellFactory.getType()).createSpec());
-		for (String feature : FeatureProvider.getFeatureNames()) {
+		for (String feature : FeatureHandler.getFeatureNames()) {
 			cols.add(new DataColumnSpecCreator(feature, DoubleCell.TYPE)
 					.createSpec());
 		}
@@ -56,7 +64,7 @@ public class TransitionGraphUtil {
 		cells[1] = new StringCell(tg.toString());
 		cells[2] = new StringCell(tg.toNodeString());
 		cells[3] = GraphCellFactory.createCell(tg.getNet());
-		double[] distVec = FeatureProvider.getFeatureVector(tg);
+		double[] distVec = FeatureHandler.getFeatureVector(tg);
 		for (int i = 0; i < distVec.length; i++) {
 			cells[i + 4] = new DoubleCell(distVec[i]);
 		}
@@ -81,5 +89,49 @@ public class TransitionGraphUtil {
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	/**
+	 * Creates a {@link Img} of the given partition.
+	 * 
+	 * @param tg
+	 *            the {@link TransitionGraph}
+	 * @param partition
+	 *            the partition
+	 * @return an {@link Img} with all nodes of the partition
+	 */
+	public static Img<BitType> createPartitionImg(TransitionGraph tg,
+			String partition) {
+		Collection<TrackedNode> nodes = tg.getNodes(partition);
+		Rectangle2D rect = null;
+		for (TrackedNode node : nodes) {
+			if (rect == null) {
+				rect = node.getImageRectangle();
+			} else {
+				rect.add(node.getImageRectangle());
+			}
+		}
+		long[] dims = new long[2];
+		dims[0] = (long) rect.getWidth();
+		dims[1] = (long) rect.getHeight();
+		Img<BitType> img = new ArrayImgFactory<BitType>().create(dims,
+				new BitType());
+		RandomAccess<BitType> ra = img.randomAccess();
+		long[] pos = new long[2];
+		for (TrackedNode node : nodes) {
+			Rectangle2D imgRect = node.getImageRectangle();
+			Cursor<BitType> cursor = node.getBitmask().getImgPlus()
+					.localizingCursor();
+			while (cursor.hasNext()) {
+				cursor.fwd();
+				pos[0] = cursor.getLongPosition(0)
+						+ (long) (imgRect.getMinX() - rect.getMinX());
+				pos[1] = cursor.getLongPosition(1)
+						+ (long) (imgRect.getMinY() - rect.getMinY());
+				ra.setPosition(pos);
+				ra.get().set(cursor.get());
+			}
+		}
+		return img;
 	}
 }

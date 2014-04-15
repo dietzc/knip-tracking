@@ -124,6 +124,10 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 			throw new InvalidSettingsException(
 					"A IntervalValue compatible value must be contained in second input.");
 		}
+		
+		if(m_featureColumns.getIncludeList().isEmpty()) {
+			setWarningMessage("No additional features selected! You might want to check the dialog.");
+		}
 
 		return new PortObjectSpec[] { new GraphPortObjectSpec(
 				new GraphMetaData(NETWORK_NAME, NETWORK_URI)) };
@@ -186,6 +190,9 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 			featureIndices.add(inDataAsBDT[0].getDataTableSpec()
 					.findColumnIndex(colName));
 		}
+		
+		if(featureIndices.isEmpty())
+			setWarningMessage("No additional features selected! You might want to check the dialog.");
 
 		net.defineFeature(FeatureTypeFactory.getBooleanType(),
 				TrackingConstants.FEATURE_ISTRACKLETEND);

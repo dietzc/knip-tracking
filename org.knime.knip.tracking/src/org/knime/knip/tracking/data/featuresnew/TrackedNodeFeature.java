@@ -1,8 +1,12 @@
 package org.knime.knip.tracking.data.featuresnew;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
-import org.knime.knip.tracking.util.DoubleHandler;
+import org.knime.knip.tracking.util.MathUtils;
 import org.knime.network.core.core.exception.InvalidFeatureException;
 import org.knime.network.core.core.exception.PersistenceException;
 import org.knime.network.core.core.feature.FeatureTypeFactory;
@@ -22,13 +26,22 @@ public abstract class TrackedNodeFeature {
 	}
 
 	/**
+	 * Dimension of the feature value, usually 1
+	 * 
+	 * @return the number of dimensions of the feature value
+	 */
+	protected int getFeatureDimension() {
+		return 1;
+	}
+
+	/**
 	 * Calculates feature.
 	 * 
 	 * @param node
 	 *            the node
 	 */
 	public abstract double[] calcInt(TrackedNode node);
-	
+
 	public double[] calc(TrackedNode node) {
 		double[] vals = calcInt(node);
 		node.setNetworkFeature(getNetworkFeatureName(), vals);
@@ -43,11 +56,12 @@ public abstract class TrackedNodeFeature {
 	 * @return the feature value
 	 */
 	public double calc(TransitionGraph tg) {
-		double[] fpavg = null;
-		double[] lpavg = null;
+		List<double[]> fp = new LinkedList<double[]>();
+		List<double[]> lp = new LinkedList<double[]>();
 		if (!tg.hasFeature(getNetworkFeatureName())) {
 			try {
-				tg.getNet().defineFeature(FeatureTypeFactory.getStringType(), getNetworkFeatureName());
+				tg.getNet().defineFeature(FeatureTypeFactory.getStringType(),
+						getNetworkFeatureName());
 			} catch (PersistenceException e) {
 				e.printStackTrace();
 			} catch (InvalidFeatureException e) {
@@ -55,42 +69,89 @@ public abstract class TrackedNodeFeature {
 			}
 			for (TrackedNode node : tg.getNodes(tg.getFirstPartition())) {
 				double[] vals = calc(node);
-				if (fpavg == null)
-					fpavg = new double[vals.length];
-				DoubleHandler.increaseBy(fpavg, vals);
+				fp.add(vals);
 				node.setNetworkFeature(getNetworkFeatureName(), vals);
 			}
 			for (TrackedNode node : tg.getNodes(tg.getLastPartition())) {
 				double[] vals = calc(node);
-				if (lpavg == null)
-					lpavg = new double[vals.length];
-				DoubleHandler.increaseBy(lpavg, vals);
+				lp.add(vals);
 				node.setNetworkFeature(getNetworkFeatureName(), vals);
 			}
 		} else {
-			//already calculated, just get the results
-			for(TrackedNode node : tg.getNodes(tg.getFirstPartition())) {
+			// already calculated, just get the results
+			for (TrackedNode node : tg.getNodes(tg.getFirstPartition())) {
 				double[] vals = node.getNetworkFeature(getNetworkFeatureName());
-				if(fpavg == null)
-					fpavg = new double[vals.length];
-				DoubleHandler.increaseBy(fpavg, vals);
+				fp.add(vals);
 			}
-			for(TrackedNode node : tg.getNodes(tg.getLastPartition())) {
+			for (TrackedNode node : tg.getNodes(tg.getLastPartition())) {
 				double[] vals = node.getNetworkFeature(getNetworkFeatureName());
-				if(lpavg == null)
-					lpavg = new double[vals.length];
-				DoubleHandler.increaseBy(lpavg, vals);
+				lp.add(vals);
 			}
 		}
-		return diff(fpavg, lpavg);
+		if (fp.isEmpty() && lp.isEmpty()) {
+			System.out.println("Both arrays null? Bug?");
+			return Double.NaN;
+		}
+		if (fp.isEmpty()) {
+			// TODO: frame avg?
+		}
+		if (lp.isEmpty()) {
+			// TODO: frame avg?
+		}
+		return diff(fp, lp, tg);
 	}
 
-	public double diff(double[] fpVals, double[] lpVals) {
+	/**
+	 * Difference between two list of features.
+	 * Default is euclidean distance between sums.
+	 * @param fpVals feature(s) of first partition
+	 * @param lpVals feature(s) of last partition
+	 * @return the distance
+	 */
+	public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+		double[] fp = MathUtils.avg(fpVals);
+		double[] lp = MathUtils.avg(lpVals);
+		System.out.println(this.getNetworkFeatureName() + ": ");
+		System.out.println(str(fpVals) + " -> " + Arrays.toString(fp));
+		System.out.println(str(lpVals) + " -> " + Arrays.toString(lp));
+		return euclideanDistance(fp, lp);
+	}
+	
+	private String str(List<double[]> vals) {
+		StringBuilder sb = new StringBuilder();
+		for(double[] arr : vals) {
+			sb.append(Arrays.toString(arr));
+			sb.append(" ");
+		}
+		return sb.toString();
+	}
+
+	protected double euclideanDistanceSqr(double[] fpVals, double[] lpVals) {
 		double res = 0.0;
 		for (int d = 0; d < fpVals.length; d++) {
-			res += (fpVals[d] * fpVals[d]) - (lpVals[d] * lpVals[d]);
+			res += (fpVals[d] - lpVals[d]) * (fpVals[d] - lpVals[d]);
 		}
-		return Math.sqrt(res);
+		return res;
+	}
+
+	protected double euclideanDistance(double[] fpVals, double[] lpVals) {
+		return Math.sqrt(euclideanDistanceSqr(fpVals, lpVals));
+	}
+
+	protected double earthMoverDistance(double[] fpVals, double[] lpVals) {
+		System.out.println("dunno what to do");
+		return Double.NaN;
+	}
+
+	protected double anglePatternDistance(double[] center, List<double[]> centers) {
+		double[] a = centers.get(0);
+		double[] b = centers.get(1);
+		
+		double[] u = MathUtils.subtract(center, a);
+		double[] v = MathUtils.subtract(center, b);
+		u = MathUtils.normalize(u);
+		v = MathUtils.normalize(v);
+		return MathUtils.dot(u, v);
 	}
 
 	@Override

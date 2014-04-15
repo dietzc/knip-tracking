@@ -1,7 +1,7 @@
 package org.knime.knip.tracking.data.featuresnew;
 
 import java.awt.geom.Rectangle2D;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -9,13 +9,17 @@ import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.algorithm.region.BresenhamLine;
+import net.imglib2.img.Img;
+import net.imglib2.ops.operation.randomaccessibleinterval.unary.ConvexHull2D;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
 
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
+import org.knime.knip.tracking.util.MathUtils;
 import org.knime.knip.tracking.util.OffsetHandling;
 import org.knime.knip.tracking.util.TrackingConstants;
+import org.knime.knip.tracking.util.TransitionGraphUtil;
 import org.knime.network.core.api.KPartiteGraph;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
@@ -24,6 +28,10 @@ import org.knime.network.core.core.exception.PersistenceException;
 
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
+
+import com.telmomenezes.jfastemd.Feature1D;
+import com.telmomenezes.jfastemd.JFastEMD;
+import com.telmomenezes.jfastemd.Signature;
 
 public class ObjectFeatures {
 
@@ -49,10 +57,42 @@ public class ObjectFeatures {
 						count++;
 				}
 				return new double[] { count };
+			}			
+		};
+	}
+	
+	/**
+	 * Object volume evenness feature relates the volume of child cells.
+	 * 
+	 * @param tg
+	 *            the {@link TransitionGraph}
+	 * @return volume evenness
+	 */
+	public static TrackedNodeFeature volumeEvenness() {
+		return new TrackedNodeFeature("ObjectVolumeEvenness") {
+
+			@Override
+			public double[] calcInt(TrackedNode node) {
+				int count = 0;
+				for (BitType pixel : node.getBitmask().getImgPlus()) {
+					if (pixel.get())
+						count++;
+				}
+				return new double[] { count };
+			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				if(lpVals.size() != 2) return Double.NaN;
+				double child1Volume = lpVals.get(0)[0];
+				double child2Volume = lpVals.get(1)[0];
+				double c1 = Math.min(child1Volume, child2Volume);
+				double c2 = Math.max(child1Volume, child2Volume);
+				return c1 / c2;
 			}
 		};
 	}
-
+	
 	/**
 	 * (Unweighted) Mean position feature Calculate the mean position and its
 	 * higher central moments. Only the shape of the object is used, not the
@@ -60,63 +100,114 @@ public class ObjectFeatures {
 	 * coordinates [N .. 2*N-1] variance [2*N .. 3*N-1] skew [3*N .. 4*N-1]
 	 * kurtosis
 	 * 
+	 * only mean is used.
+	 * 
 	 * @param tg
 	 *            the {@link TransitionGraph}
 	 * @return position
 	 */
 	public static TrackedNodeFeature position() {
 		return new TrackedNodeFeature("ObjectPosition") {
-
-			@Override
+			
 			public double[] calcInt(TrackedNode node) {
 				int noDims = (int) node.getBitmask().getDimensions().length;
-				double[] res = new double[4 * noDims];
-
+				if (noDims == 3)
+					noDims = 2; // ignore 3th dimension
+				// offset
+				double[] upperLeftCorner = new double[noDims];
+				upperLeftCorner[0] = node.getImageRectangle().getX();
+				upperLeftCorner[1] = node.getImageRectangle().getY();
+				
 				double[] coords = new double[noDims];
-				double[] variance = new double[noDims];
-				double[] skew = new double[noDims];
-				double[] kurtosis = new double[noDims];
-				int count = 0;
-
-				Cursor<BitType> cursor = node.getBitmask().getImgPlus()
-						.localizingCursor();
-				while (cursor.hasNext()) {
-					if (cursor.next().get()) {
-						for (int d = 0; d < noDims; d++) {
+				double count = 0;
+				
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						for(int d = 0; d < noDims; d++) {
 							coords[d] += cursor.getDoublePosition(d);
 						}
 						count++;
 					}
 				}
-				// avg
-				for (int d = 0; d < noDims; d++)
-					res[d] = coords[d] / count;
-
-				cursor.reset();
-				while (cursor.hasNext()) {
-					if (cursor.next().get()) {
-						for (int d = 0; d < noDims; d++) {
-							double delta = cursor.getDoublePosition(d) - res[d];
-							variance[d] += delta * delta;
-							skew[d] += delta * delta * delta;
-							kurtosis[d] += delta * delta * delta * delta;
-						}
-					}
+				
+				for(int d = 0; d < noDims; d++) {
+					coords[d] /= count;
+					
+					coords[d] += upperLeftCorner[d];
 				}
-				// avg
-				for (int d = 0; d < noDims; d++) {
-					if (variance[d] != 0)
-						res[2 * noDims + d] = variance[d] / count;
-					if (skew[d] != 0)
-						res[3 * noDims + d] = skew[d] / count
-								/ Math.pow(res[noDims + d], 3.0 / 2.0);
-					if (kurtosis[d] != 0)
-						res[3 * noDims + d] = kurtosis[d] / count
-								/ (res[noDims + d] * res[noDims + d]);
-				}
-
-				return res;
+				
+				return coords;
 			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				double[] fp = MathUtils.sum(fpVals);
+				double[] lp = MathUtils.sum(lpVals);
+				//squared as in BOT
+				return euclideanDistanceSqr(fp, lp);
+			}
+
+//			@Override
+//			public double[] calcInt(TrackedNode node) {
+//				int noDims = (int) node.getBitmask().getDimensions().length;
+//				if (noDims == 3)
+//					noDims = 2; // ignore 3th dimension
+//				double[] res = new double[4 * noDims];
+//
+//				double[] coords = new double[noDims];
+//				double[] variance = new double[noDims];
+//				double[] skew = new double[noDims];
+//				double[] kurtosis = new double[noDims];
+//				int count = 0;
+//
+//				// offset
+//				double[] upperLeftCorner = new double[noDims];
+//				upperLeftCorner[0] = node.getImageRectangle().getX();
+//				upperLeftCorner[1] = node.getImageRectangle().getY();
+//
+//				Cursor<BitType> cursor = node.getBitmask().getImgPlus()
+//						.localizingCursor();
+//				while (cursor.hasNext()) {
+//					if (cursor.next().get()) {
+//						for (int d = 0; d < noDims; d++) {
+//							coords[d] += cursor.getDoublePosition(d)
+//									+ upperLeftCorner[d];
+//						}
+//						count++;
+//					}
+//				}
+//				// avg
+//				for (int d = 0; d < noDims; d++)
+//					res[d] = coords[d] / count;
+//
+//				cursor.reset();
+//				while (cursor.hasNext()) {
+//					if (cursor.next().get()) {
+//						for (int d = 0; d < noDims; d++) {
+//							double delta = cursor.getDoublePosition(d)
+//									+ upperLeftCorner[d] - res[d];
+//							variance[d] += delta * delta;
+//							skew[d] += delta * delta * delta;
+//							kurtosis[d] += delta * delta * delta * delta;
+//						}
+//					}
+//				}
+//				// avg
+//				for (int d = 0; d < noDims; d++) {
+//					res[noDims + d] = variance[d] / count;
+//					if (variance[d] != 0) {
+//						res[2 * noDims + d] = skew[d] / count
+//								/ Math.pow(res[noDims + d], 3.0 / 2.0);
+//
+//						res[3 * noDims + d] = kurtosis[d] / count
+//								/ (res[noDims + d] * res[noDims + d]);
+//					}
+//				}
+//
+//				return res;
+//			}
 		};
 	}
 
@@ -126,70 +217,124 @@ public class ObjectFeatures {
 	 * Output structure: size = 4*N [0 .. N-1] mean coordinates [N .. 2*N-1]
 	 * variance [2*N .. 3*N-1] skew [3*N .. 4*N-1] kurtosis
 	 * 
+	 * only mean is used.
+	 * 
 	 * @param tg
 	 *            the {@link TransitionGraph}
 	 * @return position
 	 */
 	public static TrackedNodeFeature weightedPosition() {
 		return new TrackedNodeFeature("ObjectWeightedPosition") {
-
+			
 			@Override
 			public double[] calcInt(TrackedNode node) {
 				int noDims = (int) node.getBitmask().getDimensions().length;
-				double[] res = new double[4 * noDims];
-
+				if (noDims == 3)
+					noDims = 2; // ignore 3th dimension
+				// offset
+				double[] upperLeftCorner = new double[noDims];
+				upperLeftCorner[0] = node.getImageRectangle().getX();
+				upperLeftCorner[1] = node.getImageRectangle().getY();
+				
 				double[] coords = new double[noDims];
-				double[] variance = new double[noDims];
-				double[] skew = new double[noDims];
-				double[] kurtosis = new double[noDims];
-				double sum = 0.0;
-
-				Cursor<BitType> cursor = node.getBitmask().getImgPlus()
-						.localizingCursor();
-				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage()
-						.getImgPlus().randomAccess();
-				while (cursor.hasNext()) {
-					if (cursor.next().get()) {
+				double sum = 0;
+				
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage().getImgPlus().randomAccess();
+				
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
 						ra.setPosition(cursor);
 						double value = ra.get().getRealDouble();
-						for (int d = 0; d < noDims; d++) {
-							coords[d] += value * cursor.getDoublePosition(d);
+						for(int d = 0; d < noDims; d++) {
+							coords[d] += value * ra.getDoublePosition(d);
 						}
 						sum += value;
 					}
 				}
-				// avg
-				for (int d = 0; d < noDims; d++)
-					res[d] = coords[d] / sum;
-
-				cursor.reset();
-				while (cursor.hasNext()) {
-					if (cursor.next().get()) {
-						ra.setPosition(cursor);
-						double value = ra.get().getRealDouble();
-						for (int d = 0; d < noDims; d++) {
-							double delta = cursor.getDoublePosition(d) - res[d];
-							variance[d] += value * delta * delta;
-							skew[d] += value * delta * delta * delta;
-							kurtosis[d] += value * delta * delta * delta
-									* delta;
-						}
-					}
+				
+				for(int d = 0; d < noDims; d++) {
+					coords[d] /= sum;
+					
+					coords[d] += upperLeftCorner[d];
 				}
-				// avg
-				for (int d = 0; d < noDims; d++) {
-					if (variance[d] != 0)
-						res[2 * noDims + d] = variance[d] / sum;
-					if (skew[d] != 0)
-						res[3 * noDims + d] = skew[d] / sum
-								/ Math.pow(res[noDims + d], 3.0 / 2.0);
-					if (kurtosis[d] != 0)
-						res[3 * noDims + d] = kurtosis[d] / sum
-								/ (res[noDims + d] * res[noDims + d]);
-				}
-
-				return res;
+				
+				return coords;
 			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				double[] fp = MathUtils.sum(fpVals);
+				double[] lp = MathUtils.sum(lpVals);
+				//squared as in BOT
+				return euclideanDistanceSqr(fp, lp);
+			}
+
+//			@Override
+//			public double[] calcInt(TrackedNode node) {
+//				int noDims = (int) node.getBitmask().getDimensions().length;
+//				if (noDims == 3)
+//					noDims = 2; // ignore 3th dimension
+//				double[] res = new double[4 * noDims];
+//
+//				double[] coords = new double[noDims];
+//				double[] variance = new double[noDims];
+//				double[] skew = new double[noDims];
+//				double[] kurtosis = new double[noDims];
+//				double sum = 0.0;
+//
+//				// offset
+//				double[] upperLeftCorner = new double[noDims];
+//				upperLeftCorner[0] = node.getImageRectangle().getX();
+//				upperLeftCorner[1] = node.getImageRectangle().getY();
+//
+//				Cursor<BitType> cursor = node.getBitmask().getImgPlus()
+//						.localizingCursor();
+//				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage()
+//						.getImgPlus().randomAccess();
+//				while (cursor.hasNext()) {
+//					if (cursor.next().get()) {
+//						ra.setPosition(cursor);
+//						double value = ra.get().getRealDouble();
+//						for (int d = 0; d < noDims; d++) {
+//							coords[d] += value
+//									* (cursor.getDoublePosition(d) + upperLeftCorner[d]);
+//						}
+//						sum += value;
+//					}
+//				}
+//				// avg
+//				for (int d = 0; d < noDims; d++)
+//					res[d] = coords[d] / sum;
+//
+//				cursor.reset();
+//				while (cursor.hasNext()) {
+//					if (cursor.next().get()) {
+//						ra.setPosition(cursor);
+//						double value = ra.get().getRealDouble();
+//						for (int d = 0; d < noDims; d++) {
+//							double delta = (cursor.getDoublePosition(d) + upperLeftCorner[d])
+//									- res[d];
+//							variance[d] += value * delta * delta;
+//							skew[d] += value * delta * delta * delta;
+//							kurtosis[d] += value * delta * delta * delta
+//									* delta;
+//						}
+//					}
+//				}
+//				// avg
+//				for (int d = 0; d < noDims; d++) {
+//					res[noDims + d] = variance[d] / sum;
+//					if (variance[d] != 0) {
+//						res[2 * noDims + d] = skew[d] / sum
+//								/ Math.pow(res[noDims + d], 3.0 / 2.0);
+//						res[3 * noDims + d] = kurtosis[d] / sum
+//								/ (res[noDims + d] * res[noDims + d]);
+//					}
+//				}
+//
+//				return res;
+//			}
 		};
 	}
 
@@ -257,6 +402,16 @@ public class ObjectFeatures {
 
 				return res;
 			}
+		
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				double[] fp = MathUtils.avg(fpVals);
+				double[] lp = MathUtils.avg(lpVals);
+				//only eigenvalues are used in bot
+				fp = MathUtils.subArray(fp, 2);
+				lp = MathUtils.subArray(lp, 2);
+				return euclideanDistance(fp, lp);
+			}
 		};
 	}
 
@@ -266,13 +421,17 @@ public class ObjectFeatures {
 	 * coordinates (included by the object) [N .. 2*N-1] maximum coordinates
 	 * (excluded by the object) [2*N] Fill factor: <object volume> / <bounding
 	 * box volume>
+	 * 
+	 * Deprecated because not really useful ?
 	 */
+	@Deprecated
 	public static TrackedNodeFeature boundingBox() {
 		return new TrackedNodeFeature("ObjectBoundingBox") {
 
 			@Override
 			public double[] calcInt(TrackedNode node) {
 				int noDims = node.getBitmask().getDimensions().length;
+				if(noDims == 3) noDims = 2; //ignore 3rd dimension
 				Cursor<BitType> cursor = node.getBitmask().getImgPlus()
 						.localizingCursor();
 				double[] min = new double[noDims];
@@ -294,126 +453,192 @@ public class ObjectFeatures {
 				double[] res = new double[2 * noDims + 1];
 				System.arraycopy(min, 0, res, 0, min.length);
 				System.arraycopy(max, 0, res, noDims, max.length);
+				// offset
+				double[] upperLeftCorner = new double[noDims];
+				upperLeftCorner[0] = node.getImageRectangle().getX();
+				upperLeftCorner[1] = node.getImageRectangle().getY();
 				double fillFactor = volume;
 				for (int d = 0; d < noDims; d++) {
 					double length = max[d] - min[d] + 1;
 					fillFactor /= length;
+					res[d] += upperLeftCorner[d];
+					res[noDims + d] += upperLeftCorner[d];
 				}
 				res[2 * noDims] = fillFactor;
+				
+				System.out.println(node.getImageRectangle() + " " + Arrays.toString(res));
+				
 				return res;
+			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				//TODO: MERGE THEM
+				return super.diff(fpVals, lpVals, tg);
 			}
 		};
 	}
 
 	/**
-	 * Intensity feature Calculate the mean intensity and its central moments of
-	 * all object Output stucture: size = 5 [0] Mean of intensity distribution
-	 * [1] Variance of intensity distribution [2] Skew of Intensity distribution
-	 * [3] Kurtosis of Intensity distribution [4] Sum of Intensity
+	 * Intensity feature Calculate the mean intensity. 
 	 */
-	public static TrackedNodeFeature intensity() {
-		return new TrackedNodeFeature("ObjectIntensity") {
+	public static TrackedNodeFeature intensityMean() {
+		return new TrackedNodeFeature("ObjectIntensityMean") {
 
 			@Override
 			public double[] calcInt(TrackedNode node) {
-				double[] res = new double[5];
 
 				double mean = 0;
 				int count = 0;
-
-				for (RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
-					mean += pixel.getRealDouble();
-					count++;
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						mean += pixel.getRealDouble();
+						count++;
+					}
 				}
 				mean /= count;
 
-				double var = 0;
-				double skew = 0;
-				double kurt = 0;
-
-				for (RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
-					double delta = pixel.getRealDouble() - mean;
-					var += delta * delta;
-					skew += delta * delta * delta;
-					kurt += delta * delta * delta * delta;
-				}
-				res[0] = mean;
-				res[1] = var / count;
-				res[2] = skew / count / Math.pow(var, 3. / 2.);
-				res[3] = kurt / count / (var * var);
-				// mean * count = sum
-				res[4] = mean * count;
-				return res;
+				return new double[] {mean};
 			}
 		};
 	}
-
+	
 	/**
-	 * Minimum/Maximum Intensity feature Find the minimum and the maximum
-	 * intensity of a object and find the quantiles of the intensity
-	 * distribution. Output stucture: size = 9 [0] Minimum intensity [1] Maximum
-	 * intensity [2] 5% quantile [3] 10% quantile [4] 25% quantile [5] 50%
-	 * quantile [6] 75% quantile [7] 90% quantile [8] 95% quantile
+	 * Intensity feature Calculate the intensity sum. 
 	 */
-	public static TrackedNodeFeature minMaxIntensity() {
-		return new TrackedNodeFeature("ObjectMinMaxIntensity") {
+	public static TrackedNodeFeature intensitySum() {
+		return new TrackedNodeFeature("ObjectIntensitySum") {
 
 			@Override
 			public double[] calcInt(TrackedNode node) {
-				List<Double> pixels = new LinkedList<Double>();
-				double min = Double.MAX_VALUE;
-				double max = 0;
-				for (RealType<?> pixel : node.getSegmentImage().getImgPlus()) {
-					pixels.add(pixel.getRealDouble());
-					min = Math.min(min, pixel.getRealDouble());
-					max = Math.max(max, pixel.getRealDouble());
-				}
-				int size = pixels.size();
-				Collections.sort(pixels);
-				double[] res = new double[9];
-				res[0] = min;
-				res[1] = max;
-				res[2] = pixels.get((int) Math.floor(0.05 * size));
-				res[3] = pixels.get((int) Math.floor(0.1 * size));
-				res[4] = pixels.get((int) Math.floor(0.25 * size));
-				res[5] = pixels.get((int) Math.floor(0.5 * size));
-				res[6] = pixels.get((int) Math.floor(0.75 * size));
-				res[7] = pixels.get((int) Math.floor(0.90 * size));
-				res[8] = pixels.get((int) Math.floor(0.95 * size));
-				return res;
-			}
-		};
-	}
 
-	/**
-	 * Maximum Intensity feature Find the maximum intensity of a object. Output
-	 * stucture: size = N+1 [0] Maximum intensity [1 .. N] coordinates of max.
-	 * intensity
-	 */
-	public static TrackedNodeFeature maxIntensity() {
-		return new TrackedNodeFeature("ObjectMaxIntensity") {
-
-			@Override
-			public double[] calcInt(TrackedNode node) {
-				Cursor<? extends RealType<?>> cursor = node.getSegmentImage()
-						.getImgPlus().localizingCursor();
-				int noDims = cursor.numDimensions();
-				int[] coords = new int[noDims];
-				double max = 0;
-				while (cursor.hasNext()) {
-					double value = cursor.next().getRealDouble();
-					if (value > max) {
-						max = value;
-						cursor.localize(coords);
+				double sum = 0;
+				
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						sum += pixel.getRealDouble();
 					}
 				}
-				double[] res = new double[noDims + 1];
-				res[0] = max;
-				for (int d = 0; d < noDims; d++) {
-					res[d] = coords[d];
-				}
-				return res;
+
+				return new double[] {sum};
 			}
+		};
+	}
+	
+	/**
+	 * Intensity feature Calculate the intensity deviation. 
+	 */
+	public static TrackedNodeFeature intensityDeviation() {
+		return new TrackedNodeFeature("ObjectIntensityDeviation") {
+
+			@Override
+			public double[] calcInt(TrackedNode node) {
+
+				double mean = 0;
+				int count = 0;
+				
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						mean += pixel.getRealDouble();
+						count++;
+					}
+				}
+				mean /= count;
+				
+				double variance = 0;
+				
+				cursor = node.getBitmask().getImgPlus().localizingCursor();
+				ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						double delta = (pixel.getRealDouble() - mean);
+						variance += delta*delta;
+					}
+				}
+				
+				variance = Math.sqrt(variance);
+
+				return new double[] {variance};
+			}
+		};
+	}
+	
+
+	/**
+	 * A histogram of the intensity.
+	 */
+	public static TrackedNodeFeature intensityHistogram() {
+		return new TrackedNodeFeature("ObjectIntensityHistogram") {
+			
+			public final static int BIN_WIDTH = 5;
+			public final static int BIN_MAX_VALUE = 255;
+			public final static int BIN_MIN_VALUE = 0;
+			
+			public final static int NUMBER_BINS = (BIN_MAX_VALUE - BIN_MIN_VALUE) / BIN_WIDTH + 1; 
+
+			@Override
+			public double[] calcInt(TrackedNode node) {
+				double[] hist = new double[NUMBER_BINS];
+				double min = Double.MAX_VALUE;
+				double max = 0;
+								
+				Cursor<BitType> cursor = node.getBitmask().getImgPlus().localizingCursor();
+				RandomAccess<? extends RealType<?>> ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						min = Math.min(min, pixel.getRealDouble());
+						max = Math.max(max, pixel.getRealDouble());
+					}
+				}
+				
+				double interval = Math.ceil((max - min) / NUMBER_BINS);
+				
+				cursor = node.getBitmask().getImgPlus().localizingCursor();
+				ra = node.getSegmentImage().getImgPlus().randomAccess();
+				while(cursor.hasNext()) {
+					if(cursor.next().get()) {
+						ra.setPosition(cursor);
+						RealType<?> pixel = ra.get();
+						int bin = (int)((pixel.getRealDouble() - min) / interval);
+						if(bin >= hist.length) {
+							bin = hist.length - 1;
+						}
+						hist[bin]++;
+					}
+				}
+				
+				hist = MathUtils.normalizeHistogram(hist);
+				
+				return hist;
+			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
+				double[] fp = MathUtils.avg(fpVals);
+				double[] lp = MathUtils.avg(lpVals);
+				
+				Signature sigfp = Feature1D.createSignature(fp);
+				Signature siglp = Feature1D.createSignature(lp);
+				return JFastEMD.distance(sigfp, siglp, 0);
+			}
+			
+			
 		};
 	}
 
@@ -429,13 +654,17 @@ public class ObjectFeatures {
 				Rectangle2D rect = node.getImageRectangle();
 				try {
 					long[] imgDims = OffsetHandling
-							.decode(node.getNetwork().getFeatureString(node.getNetwork(), TrackingConstants.NETWORK_FEATURE_DIMENSION));
+							.decode(node
+									.getNetwork()
+									.getFeatureString(
+											node.getNetwork(),
+											TrackingConstants.NETWORK_FEATURE_DIMENSION));
 					result = Math.min(
 							rect.getMinY(),
 							Math.min(rect.getMinX(), Math.min(
 									imgDims[0] - rect.getMaxX(), imgDims[1]
 											- rect.getMaxY())));
-				} catch( Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				return new double[] { result };
@@ -452,7 +681,8 @@ public class ObjectFeatures {
 				double result = Double.MAX_VALUE;
 				try {
 					long[] imgDims = OffsetHandling
-							.decode(node.getNetwork()
+							.decode(node
+									.getNetwork()
 									.getStringFeature(
 											node.getNetwork(),
 											TrackingConstants.NETWORK_FEATURE_DIMENSION));
@@ -484,7 +714,7 @@ public class ObjectFeatures {
 										heigth, 0L));
 						list.add(cursor);
 					}
-					if (imgDims[1] - rect.getMinY() == 0) {
+					if (imgDims[1] - rect.getMaxY() == 0) {
 						// lower border
 						BresenhamLine<BitType> cursor = new BresenhamLine<BitType>(
 								node.getBitmask().getImgPlus(), new Point(0L,
@@ -492,6 +722,7 @@ public class ObjectFeatures {
 										0L));
 						list.add(cursor);
 					}
+					
 					for (Cursor<BitType> cursor : list) {
 						while (cursor.hasNext()) {
 							if (cursor.next().get())
@@ -501,7 +732,8 @@ public class ObjectFeatures {
 					result = count;
 				} catch (InvalidFeatureException e) {
 					System.out.println("IFE: " + e.getMessage());
-					KPartiteGraph<PersistentObject, Partition> net = node.getNetwork();
+					KPartiteGraph<PersistentObject, Partition> net = node
+							.getNetwork();
 					System.out.println("Features:");
 					try {
 						for (org.knime.network.core.api.Feature feature : net
@@ -514,7 +746,82 @@ public class ObjectFeatures {
 					}
 				} catch (PersistenceException e) {
 				}
-				return new double[]{result};
+				return new double[] { result };
+			}
+		};
+	}
+	
+	public static TrackedNodeFeature shapeCompactness() {
+		return new TrackedNodeFeature("ObjectShapeCompactness") {
+			
+			@Override
+			public double[] calcInt(TrackedNode node) {
+				return new double[0];
+			}
+			
+			@Override
+			protected int getFeatureDimension() {
+				return 0;
+			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals,
+					TransitionGraph tg) {
+				if (tg.getNodes(tg.getFirstPartition()).size() == 0
+						|| tg.getNodes(tg.getLastPartition()).size() == 0)
+					return Double.NaN;
+
+				// remember.. there are only 1:n and m:1 transitions generated!
+
+				Img<BitType> fpImg = tg.getNodes(tg.getFirstPartition()).iterator()
+						.next().getBitmask().getImgPlus().getImg();
+				Img<BitType> lpImg = tg.getNodes(tg.getLastPartition()).iterator()
+						.next().getBitmask().getImgPlus().getImg();
+				if (tg.getNodes(tg.getFirstPartition()).size() > 1) {
+					fpImg = TransitionGraphUtil.createPartitionImg(tg, tg.getFirstPartition());
+					ConvexHull2D convexHull = new ConvexHull2D(
+							0, 1, true);
+					convexHull.compute(fpImg, fpImg);
+				}
+				if (tg.getNodes(tg.getLastPartition()).size() > 1) {
+					lpImg = TransitionGraphUtil.createPartitionImg(tg, tg.getLastPartition());
+					ConvexHull2D convexHull = new ConvexHull2D(
+							0, 1, true);
+					convexHull.compute(lpImg, lpImg);
+				}
+
+				double fpNumPix = 0;
+				for (BitType b : fpImg)
+					if (b.get())
+						fpNumPix++;
+
+				double lpNumPix = 0;
+				for (BitType b : lpImg)
+					if (b.get())
+						lpNumPix++;
+
+				return fpNumPix / lpNumPix;
+			}
+		};
+	}
+	
+	public static TrackedNodeFeature anglePattern() {
+		return new TrackedNodeFeature("ObjectAnglePattern") {
+			
+			@Override
+			public double[] calcInt(TrackedNode node) {
+				return new double[]{node.getDoublePosition(0), node.getDoublePosition(1)};
+			}
+			
+			@Override
+			public double diff(List<double[]> fpVals, List<double[]> lpVals,
+					TransitionGraph tg) {
+				if(fpVals.size() == 1) {
+					return anglePatternDistance(fpVals.get(0), lpVals);	
+				} else if (lpVals.size() == 1) {
+					return anglePatternDistance(lpVals.get(0), fpVals);
+				}
+				return Double.NaN;
 			}
 		};
 	}
