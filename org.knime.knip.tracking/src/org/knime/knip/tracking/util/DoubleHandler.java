@@ -3,6 +3,7 @@ package org.knime.knip.tracking.util;
 
 public class DoubleHandler {
 	public static double[] decode(String s) {
+		if(s.isEmpty()) return new double[0];
 		String[] parts = s.split("\\s+");
 		double[] vals = new double[parts.length];
 		for(int p = 0; p < parts.length; p++) {

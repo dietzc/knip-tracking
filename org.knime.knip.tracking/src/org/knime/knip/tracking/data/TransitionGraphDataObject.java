@@ -7,13 +7,14 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
 
+import org.knime.core.data.DataRow;
 import org.knime.core.data.RowKey;
 import org.knime.core.util.Pair;
 import org.knime.knip.tracking.data.graph.TrackedNode;
 import org.knime.knip.tracking.data.graph.TransitionGraph;
 
 public class TransitionGraphDataObject<T extends NativeType<T> & IntegerType<T>> {
-	private RowKey rowKey;
+	private DataRow row;
 	private TransitionGraph tg;
 	private String label;
 	// edges added in gui in current iterations. Needed to make reset possible in network.
@@ -21,16 +22,20 @@ public class TransitionGraphDataObject<T extends NativeType<T> & IntegerType<T>>
 
 	private ImgPlus<T> img;
 
-	public TransitionGraphDataObject(final RowKey key, TransitionGraph tg,
+	public TransitionGraphDataObject(final DataRow row, TransitionGraph tg,
 			String label, ImgPlus<T> img) {
-		this.rowKey = key;
+		this.row = row;
 		this.tg = tg;
 		this.label = label;
 		this.img = img;
 	}
 
 	public RowKey getRowKey() {
-		return rowKey;
+		return row.getKey();
+	}
+	
+	public DataRow getRow() {
+		return row;
 	}
 
 	public TransitionGraph getTransitionGraph() {

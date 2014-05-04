@@ -74,18 +74,24 @@ public class ApplyTransitionGraphsNodeModel extends
 		for (DataRow row : table) {
 			TransitionGraph tg = new TransitionGraph(
 					((GraphValue) row.getCell(tgIdx)).getView());
+			int nrFpNodes = 0;
+			int nrLpNodes = 0;
 
 			// first partition = start nodes [1st half of array]
 			for (TrackedNode node : tg.getNodes(tg.getFirstPartition())) {
 				int nodeIdx = nodes.indexOf(node.getPersistentObject());
 				transposedIndices[nodeIdx].add(hypoIndex);
+				nrFpNodes++;
 			}
 
 			// last partition = end nodes [2nd half of array]
 			for (TrackedNode node : tg.getNodes(tg.getLastPartition())) {
 				int nodeIdx = nodes.indexOf(node.getPersistentObject());
 				transposedIndices[nodeIdx + nodeCount].add(hypoIndex);
+				nrLpNodes++;
 			}
+			
+			propabilities[hypoIndex] = Math.max(nrFpNodes, nrLpNodes);
 
 			hypoIndex++;
 		}

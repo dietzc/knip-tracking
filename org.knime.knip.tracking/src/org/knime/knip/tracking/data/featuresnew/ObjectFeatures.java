@@ -408,8 +408,14 @@ public class ObjectFeatures {
 				double[] fp = MathUtils.avg(fpVals);
 				double[] lp = MathUtils.avg(lpVals);
 				//only eigenvalues are used in bot
-				fp = MathUtils.subArray(fp, 2);
-				lp = MathUtils.subArray(lp, 2);
+				if(fp.length > 2) {
+					fp = MathUtils.subArray(fp, 2);
+				} else
+					System.err.println("fp.length <= 2 ?!");
+				if(lp.length > 2) {
+					lp = MathUtils.subArray(lp, 2);
+				} else
+					System.err.println("lp.length <= 2 ?!");
 				return euclideanDistance(fp, lp);
 			}
 		};
@@ -816,9 +822,9 @@ public class ObjectFeatures {
 			@Override
 			public double diff(List<double[]> fpVals, List<double[]> lpVals,
 					TransitionGraph tg) {
-				if(fpVals.size() == 1) {
+				if(fpVals.size() == 1 && lpVals.size() == 2) {
 					return anglePatternDistance(fpVals.get(0), lpVals);	
-				} else if (lpVals.size() == 1) {
+				} else if (lpVals.size() == 1 && fpVals.size() == 2) {
 					return anglePatternDistance(lpVals.get(0), fpVals);
 				}
 				return Double.NaN;

@@ -218,7 +218,7 @@ public class TrackletCreatorNodeModel extends KPartiteGraphNodeModel {
 					break;
 				if (!sources.contains(ec.source)
 						&& !targets.contains(ec.target)) {
-					PersistentObject edge = net.createEdge(ec.source + "-"
+					PersistentObject edge = net.createEdge(ec.source + "_"
 							+ ec.target, trackletEdgePartition, ec.source,
 							ec.target);
 					net.setEdgeWeight(edge, (int) prob);

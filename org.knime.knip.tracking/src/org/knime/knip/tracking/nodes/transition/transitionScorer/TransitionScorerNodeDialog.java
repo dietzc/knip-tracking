@@ -1,6 +1,8 @@
 package org.knime.knip.tracking.nodes.transition.transitionScorer;
 
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
+import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 
 /**
  * <code>NodeDialog</code> for the "TransitionScorer" Node. Judges the
@@ -20,6 +22,9 @@ public class TransitionScorerNodeDialog extends DefaultNodeSettingsPane {
 	 * New pane for configuring the TransitionScorer node.
 	 */
 	protected TransitionScorerNodeDialog() {
-
+		SettingsModelInteger smiFR = TransitionScorerNodeModel.createFirstModel();
+		SettingsModelInteger smiNR = TransitionScorerNodeModel.createNoRowModel();
+		addDialogComponent(new DialogComponentNumber(smiFR, "Number of rows in first iteration:", 1, createFlowVariableModel(smiFR)));
+		addDialogComponent(new DialogComponentNumber(smiNR, "Number of rows in each iteration:", 1, createFlowVariableModel(smiNR)));
 	}
 }

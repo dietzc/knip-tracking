@@ -171,10 +171,11 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 					otherNodes.add(endNode);
 				}
 				if(otherNodes.isEmpty()) {
-					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
-					startNode.createCopyIn(tg);
-					cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
-					count++;
+					//TODO: readd?
+//					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+//					startNode.createCopyIn(tg);
+//					cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+//					count++;
 				}
 				for(int i = 0; i < otherNodes.size(); i++) {
 					TrackedNode endNode1 = otherNodes.get(i);
@@ -183,7 +184,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 						TrackedNode sN = startNode.createCopyIn(tg);
 						TrackedNode eN = endNode1.createCopyIn(tg);
 						tg.createEdge(sN, eN);
-						cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+						cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
 						count++;
 					}
 					for(int j = i+1; j < otherNodes.size(); j++) {
@@ -195,7 +196,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 							TrackedNode eN2 = endNode2.createCopyIn(tg);
 							tg.createEdge(sN, eN1);
 							tg.createEdge(sN, eN2);
-							cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
 							count++;
 						}
 					}
@@ -220,10 +221,11 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 					otherNodes.add(startNode);
 				}
 				if(otherNodes.isEmpty()) {
-					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
-					endNode.createCopyIn(tg);
-					cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
-					count++;
+					//TODO: readd?
+//					TransitionGraph tg = TransitionGraphUtil.createTransitionGraphForNetwork(net, t0, t1);
+//					endNode.createCopyIn(tg);
+//					cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+//					count++;
 				}
 				for(int i = 0; i < otherNodes.size(); i++) {
 					TrackedNode startNode1 = otherNodes.get(i);
@@ -237,7 +239,7 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 							TrackedNode sN2 = startNode2.createCopyIn(tg);
 							tg.createEdge(sN1, eN);
 							tg.createEdge(sN2, eN);
-							cont.addRowToTable(new DefaultRow(t0 + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
 							count++;
 						}
 					}

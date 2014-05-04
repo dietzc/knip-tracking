@@ -19,6 +19,7 @@ import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.DataType;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.knip.base.data.img.ImgPlusCell;
@@ -67,6 +68,8 @@ public class TransitionGraphUtil {
 		double[] distVec = FeatureHandler.getFeatureVector(tg);
 		for (int i = 0; i < distVec.length; i++) {
 			cells[i + 4] = new DoubleCell(distVec[i]);
+			if(Double.isNaN(distVec[i]))
+				cells[i+4] = DataType.getMissingCell();
 		}
 		return cells;
 	}

@@ -1,6 +1,5 @@
 package org.knime.knip.tracking.data.featuresnew;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -111,20 +110,20 @@ public abstract class TrackedNodeFeature {
 	public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
 		double[] fp = MathUtils.avg(fpVals);
 		double[] lp = MathUtils.avg(lpVals);
-		System.out.println(this.getNetworkFeatureName() + ": ");
-		System.out.println(str(fpVals) + " -> " + Arrays.toString(fp));
-		System.out.println(str(lpVals) + " -> " + Arrays.toString(lp));
+//		System.out.println(this.getNetworkFeatureName() + ": ");
+//		System.out.println(str(fpVals) + " -> " + Arrays.toString(fp));
+//		System.out.println(str(lpVals) + " -> " + Arrays.toString(lp));
 		return euclideanDistance(fp, lp);
 	}
 	
-	private String str(List<double[]> vals) {
-		StringBuilder sb = new StringBuilder();
-		for(double[] arr : vals) {
-			sb.append(Arrays.toString(arr));
-			sb.append(" ");
-		}
-		return sb.toString();
-	}
+//	private String str(List<double[]> vals) {
+//		StringBuilder sb = new StringBuilder();
+//		for(double[] arr : vals) {
+//			sb.append(Arrays.toString(arr));
+//			sb.append(" ");
+//		}
+//		return sb.toString();
+//	}
 
 	protected double euclideanDistanceSqr(double[] fpVals, double[] lpVals) {
 		double res = 0.0;
