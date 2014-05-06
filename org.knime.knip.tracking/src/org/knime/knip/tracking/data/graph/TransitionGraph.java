@@ -229,6 +229,18 @@ public class TransitionGraph {
 		}
 		return output.toString();
 	}
+	
+	public String createOutputName() {
+		StringBuilder output = new StringBuilder();
+		output.append(getFirstPartition());
+		for(TrackedNode node : getNodes(getFirstPartition())) {
+			output.append("f").append(node.getID());
+		}
+		for(TrackedNode node : getNodes(getLastPartition())) {
+			output.append("t").append(node.getID());
+		}
+		return output.toString();
+	}
 
 	public double distanceTo(final TransitionGraph otherGraph) {
 		double minDist = Double.MAX_VALUE;
@@ -515,8 +527,7 @@ public class TransitionGraph {
 		ArrayList<TrackedNode> n1 = new ArrayList<TrackedNode>(tg.getNodes(tg
 				.getLastPartition()));
 
-		if (n0.size() == 1) {
-			TrackedNode startNode = n0.get(0);
+		for (TrackedNode startNode : n0) {
 			for (int i = 0; i < n1.size(); i++) {
 				TrackedNode endNode1 = n1.get(i);
 				// create 1:1 subgraph
@@ -553,28 +564,13 @@ public class TransitionGraph {
 				}
 			}
 		}
-		if (n1.size() == 1) {
-			TrackedNode endNode = n1.get(0);
+		for (TrackedNode endNode : n1) {
 			for (int i = 0; i < n0.size(); i++) {
 				TrackedNode startNode1 = n0.get(i);
-				// create 1:1 subgraph
-				{
-					TransitionGraph graph = TransitionGraphUtil
-							.createTransitionGraphForNetwork(tg.getNet(), t0,
-									t1);
-					TrackedNode eN = endNode.createCopyIn(graph);
-					startNode1 = startNode1.createCopyIn(graph);
-					try {
-						graph.createEdge(startNode1, eN);
-					} catch (PersistenceException e) {
-						e.printStackTrace();
-					}
-					graphs.add(graph);
-				}
-				// 1:1 created
+				// 1:1 already done in startNode step
 				for (int j = i + 1; j < n0.size(); j++) {
 					TrackedNode startNode2 = n0.get(j);
-					// create 1:2 subgraph
+					// create 2:1 subgraph
 					TransitionGraph graph = TransitionGraphUtil
 							.createTransitionGraphForNetwork(tg.getNet(), t0,
 									t1);
@@ -590,10 +586,6 @@ public class TransitionGraph {
 					graphs.add(graph);
 				}
 			}
-		}
-		
-		if(n0.size() != 1 && n1.size() != 1) {
-			System.err.println("This should never happen.");
 		}
 
 		if (graphs.isEmpty()) {

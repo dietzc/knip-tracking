@@ -74,6 +74,22 @@ public class TransitionGraphUtil {
 		return cells;
 	}
 	
+	public static <T extends NativeType<T> & IntegerType<T>> DataCell[] transitionGraph2DataCellsWithoutRendering(
+			TransitionGraph tg) {
+		DataCell[] cells = new DataCell[createOutSpec().getNumColumns()];
+		cells[0] = DataType.getMissingCell();
+		cells[1] = new StringCell(tg.toString());
+		cells[2] = new StringCell(tg.toNodeString());
+		cells[3] = GraphCellFactory.createCell(tg.getNet());
+		double[] distVec = FeatureHandler.getFeatureVector(tg);
+		for (int i = 0; i < distVec.length; i++) {
+			cells[i + 4] = new DoubleCell(distVec[i]);
+			if(Double.isNaN(distVec[i]))
+				cells[i+4] = DataType.getMissingCell();
+		}
+		return cells;
+	}
+	
 	public static TransitionGraph createTransitionGraphForNetwork(
 			KPartiteGraphView<PersistentObject, Partition> net, Partition t0,
 			Partition t1) {

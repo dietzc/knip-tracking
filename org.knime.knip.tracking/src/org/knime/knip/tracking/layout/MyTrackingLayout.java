@@ -62,7 +62,8 @@ import org.knime.network.core.api.KPartiteGraphView;
 import org.knime.network.core.api.Partition;
 import org.knime.network.core.api.PersistentObject;
 import org.knime.network.core.core.PartitionType;
-import org.knime.network.node.viz.viewer.jung.layout.AbstractCachedLayout;
+import org.knime.network.node.viz.viewer.VisualizationSettings;
+import org.knime.network.node.viz.viewer.layout.AbstractCachedLayout;
 import org.knime.network.util.adapter.jung.JungKNIMEAdapter;
 import org.knime.network.util.adapter.jung.JungReadOnlyAdapter;
 
@@ -264,7 +265,8 @@ public class MyTrackingLayout extends AbstractCachedLayout {
 
 	@Override
 	protected Layout<PersistentObject, PersistentObject> createLayout(
-			ExecutionMonitor exec, JungKNIMEAdapter graphAdapter)
+			ExecutionMonitor exec, JungKNIMEAdapter graphAdapter,
+			VisualizationSettings vizSettings)
 			throws CanceledExecutionException {
 		m_view = graphAdapter.getView();
 		return new PartitionLayout(graphAdapter);

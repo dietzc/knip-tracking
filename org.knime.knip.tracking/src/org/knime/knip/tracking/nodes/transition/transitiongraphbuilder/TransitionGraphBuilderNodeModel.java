@@ -152,22 +152,24 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 					.getPartition());
 
 			KDTree<TrackedNode>.KDTreeCursor cursor = tree.cursor();
-			int count = 0;
+			//int count = 0;
 			RadiusNeighborSearchOnKDTree<TrackedNode> rns = new RadiusNeighborSearchOnKDTree<TrackedNode>(nextTree);
 			while (cursor.hasNext()) {
 				exec.checkCanceled();
 				TrackedNode startNode = cursor.next();				
 				rns.search(startNode, m_distance.getDoubleValue(), true);
 				double lastDist = -1;
+				//String lastNode = null;
 				List<TrackedNode> otherNodes = new ArrayList<TrackedNode>();
 				for(int n = 0; n < rns.numNeighbors(); n++) {
 					double dist = rns.getSquareDistance(n);
 					if(lastDist != -1 && dist > 10*lastDist) {
-						//System.out.println("break early on " + startNode + " due to: " + dist + " vs " + lastDist);
+						//System.out.println("break early on " + startNode + " due to: " + dist + "(" + rns.getSampler(n).get().getID() + ") vs " + lastDist + "(" + lastNode + ")");
 						break;
 					}
 					lastDist = dist;
 					TrackedNode endNode = rns.getSampler(n).get();
+					//lastNode = endNode.getID(); 
 					otherNodes.add(endNode);
 				}
 				if(otherNodes.isEmpty()) {
@@ -184,8 +186,8 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 						TrackedNode sN = startNode.createCopyIn(tg);
 						TrackedNode eN = endNode1.createCopyIn(tg);
 						tg.createEdge(sN, eN);
-						cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
-						count++;
+						cont.addRowToTable(new DefaultRow(tg.createOutputName()/*t0.getId() + "#" + count*/, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+						//count++;
 					}
 					for(int j = i+1; j < otherNodes.size(); j++) {
 						TrackedNode endNode2 = otherNodes.get(j);
@@ -196,8 +198,8 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 							TrackedNode eN2 = endNode2.createCopyIn(tg);
 							tg.createEdge(sN, eN1);
 							tg.createEdge(sN, eN2);
-							cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
-							count++;
+							cont.addRowToTable(new DefaultRow(tg.createOutputName()/*t0.getId() + "#" + count*/, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							//count++;
 						}
 					}
 				}
@@ -239,8 +241,8 @@ public class TransitionGraphBuilderNodeModel<T extends NativeType<T> & IntegerTy
 							TrackedNode sN2 = startNode2.createCopyIn(tg);
 							tg.createEdge(sN1, eN);
 							tg.createEdge(sN2, eN);
-							cont.addRowToTable(new DefaultRow(t0.getId() + "#" + count, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
-							count++;
+							cont.addRowToTable(new DefaultRow(tg.createOutputName() /*t0.getId() + "#" + count*/, TransitionGraphUtil.transitionGraph2DataCells(tg, baseImg, ipcf)));
+							//count++;
 						}
 					}
 				}

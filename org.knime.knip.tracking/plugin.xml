@@ -35,6 +35,7 @@
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.transition.applytg.ApplyTransitionGraphsNodeFactory" id="org.knime.knip.tracking.nodes.transition.applytg.ApplyTransitionGraphsNodeFactory"/>
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.tableCopy.TableCopyNodeFactory" id="org.knime.knip.tracking.nodes.tableCopy.TableCopyNodeFactory"/>
 <node category-path="/" factory-class="org.knime.knip.tracking.nodes.addfeature.AddFeaturesToTrackingNetworkNodeFactory" id="org.knime.knip.tracking.nodes.addfeature.AddFeaturesToTrackingNetworkNodeFactory"/>
+<node category-path="/" factory-class="org.knime.knip.tracking.nodes.transition.transitionPatch.TransitionPatchCreatorNodeFactory" id="org.knime.knip.tracking.nodes.transition.transitionPatch.TransitionPatchCreatorNodeFactory"/>
 </extension>
    <extension point="org.knime.network.core.FeatureType">
       <FeatureType FeatureType="org.knime.knip.tracking.data.FeatureTypeImgPlusCell">

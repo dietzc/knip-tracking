@@ -83,7 +83,7 @@ public class ObjectFeatures {
 			
 			@Override
 			public double diff(List<double[]> fpVals, List<double[]> lpVals, TransitionGraph tg) {
-				if(lpVals.size() != 2) return Double.NaN;
+				if(lpVals.size() != 2) return 1;//Double.NaN;
 				double child1Volume = lpVals.get(0)[0];
 				double child2Volume = lpVals.get(1)[0];
 				double c1 = Math.min(child1Volume, child2Volume);
@@ -775,7 +775,7 @@ public class ObjectFeatures {
 					TransitionGraph tg) {
 				if (tg.getNodes(tg.getFirstPartition()).size() == 0
 						|| tg.getNodes(tg.getLastPartition()).size() == 0)
-					return Double.NaN;
+					return 1;//Double.NaN;
 
 				// remember.. there are only 1:n and m:1 transitions generated!
 
@@ -827,7 +827,7 @@ public class ObjectFeatures {
 				} else if (lpVals.size() == 1 && fpVals.size() == 2) {
 					return anglePatternDistance(lpVals.get(0), fpVals);
 				}
-				return Double.NaN;
+				return 1;//Double.NaN;
 			}
 		};
 	}

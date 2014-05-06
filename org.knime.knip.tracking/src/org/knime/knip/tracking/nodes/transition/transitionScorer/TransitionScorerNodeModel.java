@@ -59,12 +59,13 @@ public class TransitionScorerNodeModel extends NodeModel {
 	@Override
 	protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
 			final ExecutionContext exec) throws Exception {
-		System.out.println(getAvailableFlowVariables().get("AL_ITERATION"));
 		if (getAvailableFlowVariables().get("AL_ITERATION").getIntValue() == 0) {
 			// first iteration
 			List<Integer> indices = new LinkedList<Integer>();
 			Random rand = new Random(1337);
-			for (int i = 0; i < m_firstCount.getIntValue(); i++) {
+			int firstCount = Math.min(m_firstCount.getIntValue(),
+					inData[0].getRowCount());
+			for (int i = 0; i < firstCount; i++) {
 				boolean found = false;
 				while (!found) {
 					int nr = rand.nextInt(inData[0].getRowCount());
@@ -86,34 +87,86 @@ public class TransitionScorerNodeModel extends NodeModel {
 			}
 
 			cont.close();
-			return new BufferedDataTable[] {exec.createBufferedDataTable(cont.getTable(), exec)};
+			return new BufferedDataTable[] { exec.createBufferedDataTable(
+					cont.getTable(), exec) };
 		}
 
-		final int kernelDensityIdx = inData[0].getDataTableSpec()
-				.findColumnIndex("kernel density");
+		int kernelDensityIdx = inData[0].getDataTableSpec().findColumnIndex(
+				"kernel density");
+		if (kernelDensityIdx == -1)
+			kernelDensityIdx = inData[0].getDataTableSpec().findColumnIndex(
+					"Density");
 		if (kernelDensityIdx != -1) {
+			final int index = kernelDensityIdx;
 			BufferedDataTableSorter sorter = new BufferedDataTableSorter(
 					inData[0], new Comparator<DataRow>() {
 						@Override
 						public int compare(DataRow row1, DataRow row2) {
 							int cmp = Double.compare(((DoubleValue) row1
-									.getCell(kernelDensityIdx))
-									.getDoubleValue(), ((DoubleValue) row2
-									.getCell(kernelDensityIdx))
-									.getDoubleValue());
-							return -cmp;
+									.getCell(index)).getDoubleValue(),
+									((DoubleValue) row2.getCell(index))
+											.getDoubleValue());
+							return cmp;
 						}
 					});
-			sorter.sort(exec);
+			BufferedDataTable sortedTable = sorter.sort(exec);
 
-			RowIterator it = inData[0].iterator();
+			int ctr = 0;
+			for (DataRow row : sortedTable) {
+				System.out.println("should be: " + row.getKey() + " with "
+						+ row.getCell(kernelDensityIdx));
+				ctr++;
+				if (ctr == 5)
+					break;
+			}
+
+			RowIterator it = sortedTable.iterator();
 			return new BufferedDataTable[] { output(it,
-					inData[0].getDataTableSpec(), exec) };
-		} else {
-			RowIterator it = inData[0].iterator();
-			return new BufferedDataTable[] { output(it,
-					inData[0].getDataTableSpec(), exec) };
+					sortedTable.getDataTableSpec(), exec) };
 		}
+		
+		final int plusIdx = inData[0].getDataTableSpec().findColumnIndex("+");
+		final int minusIdx = inData[0].getDataTableSpec().findColumnIndex("-");
+		
+		if(plusIdx != -1 && minusIdx != -1) {
+			BufferedDataTableSorter sorter = new BufferedDataTableSorter(
+					inData[0], new Comparator<DataRow>() {
+						@Override
+						public int compare(DataRow row1, DataRow row2) {
+							int cmp = Double.compare(Math.abs(((DoubleValue) row1
+									.getCell(plusIdx)).getDoubleValue() -
+									((DoubleValue) row1.getCell(minusIdx))
+											.getDoubleValue()), Math.abs(((DoubleValue) row2
+													.getCell(plusIdx)).getDoubleValue() -
+													((DoubleValue) row2.getCell(minusIdx))
+															.getDoubleValue()));
+							return cmp;
+						}
+					});
+			BufferedDataTable sortedTable = sorter.sort(exec);
+
+			int ctr = 0;
+			for (DataRow row : sortedTable) {
+				System.out.println("should be: " + row.getKey() + " with "
+						+ Math.abs(((DoubleValue) row
+								.getCell(plusIdx)).getDoubleValue() -
+								((DoubleValue) row.getCell(minusIdx))
+										.getDoubleValue()));
+				ctr++;
+				if (ctr == m_rowCount.getIntValue())
+					break;
+			}
+
+			RowIterator it = sortedTable.iterator();
+			return new BufferedDataTable[] { output(it,
+					sortedTable.getDataTableSpec(), exec) };
+		}
+
+		//normal case, x rows
+		RowIterator it = inData[0].iterator();
+		return new BufferedDataTable[] { output(it,
+				inData[0].getDataTableSpec(), exec) };
+
 	}
 
 	private BufferedDataTable output(RowIterator it, DataTableSpec inSpec,
@@ -121,7 +174,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 		DataTableSpec outSpec = createOutspec(inSpec);
 		DataContainer cont = new DataContainer(outSpec);
 		// get first x values
-		for (int count = 0; count < m_rowCount.getIntValue(); count++) {
+		for (int count = 0; count < m_rowCount.getIntValue() && it.hasNext(); count++) {
 			cont.addRowToTable(filterColumns(it.next(), inSpec));
 		}
 		cont.close();

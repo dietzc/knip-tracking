@@ -245,8 +245,8 @@ public class CreateTrackingNetworkNodeModel<L extends Comparable<L>, T extends R
 		net.defineFeature(FeatureTypeFactory.getType(ImgPlusCell.TYPE),
 				TrackingConstants.FEATURE_SEGMENT_IMG);
 
-		FileStoreFactory fileStore = FileStoreFactory
-				.createNotInWorkflowFileStoreFactory();
+		FileStoreFactory fileStore = FileStoreFactory.createWorkflowFileStoreFactory(exec);
+				//.createNotInWorkflowFileStoreFactory();
 		double count = 1.0;
 		for (DataRow row : inDataAsBDT[0]) {
 			//TODO: was Integer!
