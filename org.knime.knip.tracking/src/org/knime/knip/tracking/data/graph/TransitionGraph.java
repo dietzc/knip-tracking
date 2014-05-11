@@ -4,6 +4,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -233,10 +234,24 @@ public class TransitionGraph {
 	public String createOutputName() {
 		StringBuilder output = new StringBuilder();
 		output.append(getFirstPartition());
-		for(TrackedNode node : getNodes(getFirstPartition())) {
+		LinkedList<TrackedNode> fpNodes = new LinkedList<TrackedNode>(getNodes(getFirstPartition()));
+		Collections.sort(fpNodes, new Comparator<TrackedNode>() {
+			@Override
+			public int compare(TrackedNode o1, TrackedNode o2) {
+				return o1.getID().compareTo(o2.getID());
+			}
+		});
+		LinkedList<TrackedNode> lpNodes = new LinkedList<TrackedNode>(getNodes(getLastPartition()));
+		Collections.sort(lpNodes, new Comparator<TrackedNode>() {
+			@Override
+			public int compare(TrackedNode o1, TrackedNode o2) {
+				return o1.getID().compareTo(o2.getID());
+			}
+		});
+		for(TrackedNode node : fpNodes) {
 			output.append("f").append(node.getID());
 		}
-		for(TrackedNode node : getNodes(getLastPartition())) {
+		for(TrackedNode node : lpNodes) {
 			output.append("t").append(node.getID());
 		}
 		return output.toString();

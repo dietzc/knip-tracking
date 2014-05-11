@@ -2,6 +2,8 @@ package org.knime.knip.tracking.nodes.transition.transitionScorer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,7 +64,7 @@ public class TransitionScorerNodeModel extends NodeModel {
 		if (getAvailableFlowVariables().get("AL_ITERATION").getIntValue() == 0) {
 			// first iteration
 			List<Integer> indices = new LinkedList<Integer>();
-			Random rand = new Random(1337);
+			Random rand = new Random();
 			int firstCount = Math.min(m_firstCount.getIntValue(),
 					inData[0].getRowCount());
 			for (int i = 0; i < firstCount; i++) {
@@ -129,6 +131,29 @@ public class TransitionScorerNodeModel extends NodeModel {
 		final int minusIdx = inData[0].getDataTableSpec().findColumnIndex("-");
 		
 		if(plusIdx != -1 && minusIdx != -1) {
+			ArrayList<Double> qs = new ArrayList<Double>(inData[0].getRowCount());
+			for(DataRow row : inData[0]) {
+				double plus = ((DoubleValue)row.getCell(plusIdx)).getDoubleValue();
+				double minus = ((DoubleValue)row.getCell(minusIdx)).getDoubleValue();
+				double q = Math.exp(-Math.abs(plus-minus));
+				qs.add(q);
+			}
+			Collections.sort(qs);
+			int startIndex = (int) Math.round(qs.size() * 0.1);
+			int endIndex = qs.size() - startIndex;
+			
+			double mean = 0.0;
+			for(int index = startIndex; index < endIndex; index++) {
+				mean += qs.get(index);
+			}
+			mean /= (endIndex-startIndex);
+			
+			qs = null;
+			
+			System.out.println("meanQ=" + mean);
+			
+			pushFlowVariableDouble("meanQ", mean);
+			
 			BufferedDataTableSorter sorter = new BufferedDataTableSorter(
 					inData[0], new Comparator<DataRow>() {
 						@Override
@@ -162,10 +187,10 @@ public class TransitionScorerNodeModel extends NodeModel {
 					sortedTable.getDataTableSpec(), exec) };
 		}
 
-		//normal case, x rows
+		//normal case, x random rows
 		RowIterator it = inData[0].iterator();
-		return new BufferedDataTable[] { output(it,
-				inData[0].getDataTableSpec(), exec) };
+		return new BufferedDataTable[] { randomOutput(it,
+				inData[0], exec) };
 
 	}
 
@@ -176,6 +201,33 @@ public class TransitionScorerNodeModel extends NodeModel {
 		// get first x values
 		for (int count = 0; count < m_rowCount.getIntValue() && it.hasNext(); count++) {
 			cont.addRowToTable(filterColumns(it.next(), inSpec));
+		}
+		cont.close();
+		return exec.createBufferedDataTable(cont.getTable(), exec);
+	}
+	
+	private BufferedDataTable randomOutput(RowIterator it, BufferedDataTable table,
+			ExecutionContext exec) throws CanceledExecutionException {
+		DataTableSpec outSpec = createOutspec(table.getDataTableSpec());
+		DataContainer cont = new DataContainer(outSpec);
+		//create indices
+		List<Integer> indices = new LinkedList<Integer>();
+		Random rand = new Random();
+		int firstCount = Math.min(m_firstCount.getIntValue(),
+				table.getRowCount());
+		for (int i = 0; i < firstCount; i++) {
+			boolean found = false;
+			while (!found) {
+				int nr = rand.nextInt(table.getRowCount());
+				if (!indices.contains(nr)) {
+					indices.add(nr);
+					found = true;
+				}
+			}
+		}
+		// get first x values
+		for (int count = 0; count < m_rowCount.getIntValue() && it.hasNext(); count++) {
+			cont.addRowToTable(filterColumns(it.next(), table.getDataTableSpec()));
 		}
 		cont.close();
 		return exec.createBufferedDataTable(cont.getTable(), exec);
